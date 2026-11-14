@@ -5,8 +5,8 @@ import type { IconDef } from "./protocol.ts";
 const camel = (k: string) => k.replace(/-(\w)/g, (_, c: string) => c.toUpperCase()); // stroke-width -> strokeWidth
 
 /** A block's `view.icon` as an SVG sized to its plate; null when it cannot be drawn (the caller draws the plain plate). */
-export function Icon({ icon, type, fill }: { icon: IconDef | undefined; type?: string; fill?: (s: string) => string }) {
-  const nodes = iconNodes(icon, type, fill);
+export function Icon({ icon, type, fill, on }: { icon: IconDef | undefined; type?: string; fill?: (s: string) => string; on?: boolean }) {
+  const nodes = iconNodes(icon, type, fill, on);
   if (!nodes || !icon) return null;
   const { w, h } = plateSize(icon);
   return (

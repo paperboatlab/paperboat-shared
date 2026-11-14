@@ -4,7 +4,7 @@ import { isRef } from "./bindings.ts";
 import { polynomial } from "./poly.ts";
 import { useDismiss } from "./dismiss.tsx";
 import { Icon } from "./Icon.tsx";
-import { iconValid, plateSize } from "./icon.ts";
+import { iconValid, isOn, plateSize } from "./icon.ts";
 import { connectorHint, hasIconPorts, placeIconPorts, placePorts, portHint, portLabel, SIDES, signOf, type PortSides } from "./ports.ts";
 import type { BlockDef, Connectors, IconDef, ParamValue } from "./protocol.ts";
 import { PortHandle } from "./wireSnap.tsx";
@@ -55,6 +55,7 @@ export function CompactBlock({
   popover,
   connectors,
   wires,
+  live,
 }: {
   id: string;
   def: BlockDef;
@@ -67,6 +68,8 @@ export function CompactBlock({
   onExpand: () => void;
   /** The param rows shown in the popover. */
   popover: ReactNode;
+  /** The block's latest value in a run, for icon primitives drawn `when` it is on or off. */
+  live?: unknown;
   /** The catalog's connector classes, for `view.icon.ports`. */
   connectors?: Connectors;
   /** How many wires meet at each icon port (3 or more draw a junction dot). */
@@ -106,7 +109,7 @@ export function CompactBlock({
           if ((e.key === "Enter" || e.key === " ") && hasParams) setOpen(!open);
         }}
       >
-        {icon ? <Icon icon={icon} type={def.type} fill={(t) => captionValue(t, params)} /> : <Glyph name={glyphName} />}
+        {icon ? <Icon icon={icon} type={def.type} fill={(t) => captionValue(t, params)} on={isOn(live)} /> : <Glyph name={glyphName} />}
         {hasIconPorts(icon) ? (
           <IconPorts icon={icon!} params={params} connectors={connectors} wires={wires} />
         ) : (

@@ -25,6 +25,9 @@ export const FILL = {
   ink: "var(--ink, var(--text))",
   raised: "var(--surface-raised)",
   sunken: "var(--surface-sunken)",
+  signal: "var(--signal)",
+  /** A display's black, the same in light and dark (an instrument's screen). */
+  screen: "var(--surface-screen)",
   electrical: "var(--dom-electrical, var(--text))",
   translational: "var(--dom-translational, var(--text))",
   thermal: "var(--dom-thermal, var(--text))",
@@ -61,6 +64,7 @@ function primValid(p: Prim): boolean {
   if (p.weight !== undefined && !own(WEIGHT, p.weight)) return false;
   if (p.dash !== undefined && !own(DASH, p.dash)) return false;
   if (p.fill !== undefined && !own(FILL, p.fill)) return false;
+  if (p.when !== undefined && p.when !== "on" && p.when !== "off") return false;
   switch (p.t) {
     case "line":
     case "poly":
@@ -80,11 +84,15 @@ function primValid(p: Prim): boolean {
 
 const r = (n: number) => +n.toFixed(2);
 
+/** Whether a block's latest value reads as on: a number above 0.5, or true. */
+export const isOn = (latest: unknown) => (typeof latest === "number" ? latest > 0.5 : latest === true);
+
 /**
  * The icon as SVG node data, sized to its plate, or null (after one `console.warn` per `type`)
- * when it cannot be drawn. `fill` puts the block's params into `{param}` in text.
+ * when it cannot be drawn. `fill` puts the block's params into `{param}` in text. `on` is the
+ * block's live state: a primitive with `when` is drawn only while it matches (off before a run).
  */
-export function iconNodes(icon: IconDef | undefined, type = "", fill: (s: string) => string = (s) => s): SvgNode[] | null {
+export function iconNodes(icon: IconDef | undefined, type = "", fill: (s: string) => string = (s) => s, on = false): SvgNode[] | null {
   if (!iconValid(icon)) {
     if (icon !== undefined && !warned.has(type)) {
       warned.add(type);
@@ -97,7 +105,7 @@ export function iconNodes(icon: IconDef | undefined, type = "", fill: (s: string
   const sy = (h - 2 * PAD) / 100;
   const X = (x: number) => r(PAD + x * sx);
   const Y = (y: number) => r(PAD + y * sy);
-  return icon.g.map((p): SvgNode => {
+  return icon.g.filter((p) => !p.when || (p.when === "on") === on).map((p): SvgNode => {
     const line = { stroke: STROKE[p.stroke ?? "ink"], "stroke-width": WEIGHT[p.weight ?? "normal"], "stroke-dasharray": DASH[p.dash ?? "solid"], "stroke-linecap": "round", "stroke-linejoin": "round" };
     const body = { ...line, fill: FILL[p.fill ?? "none"] };
     switch (p.t) {

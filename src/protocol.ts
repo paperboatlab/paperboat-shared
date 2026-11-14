@@ -53,8 +53,8 @@ export type Weight = "thin" | "normal" | "wire";
 /** Never red: dashed red means missing only. */
 export type Dash = "solid" | "axis" | "dash" | "dot" | "dashdot";
 
-/** none, --text, --surface-raised or --surface-sunken. */
-export type Fill = "none" | "ink" | "raised" | "sunken" | "electrical" | "translational" | "thermal" | "fluid" | "magnetic" | "rotational";
+/** none, --text, --surface-raised, --surface-sunken, --signal, or --surface-screen (the black of a display, the same in light and dark). */
+export type Fill = "none" | "ink" | "raised" | "sunken" | "signal" | "screen" | "electrical" | "translational" | "thermal" | "fluid" | "magnetic" | "rotational";
 
 /** md = 5px. */
 export type Corner = "0" | "sm" | "md";
@@ -70,6 +70,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 } | {
   t: "poly";
   p: Pt[];
@@ -77,6 +78,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 } | {
   t: "rect";
   x: number;
@@ -88,6 +90,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 } | {
   t: "ellipse";
   x: number;
@@ -98,6 +101,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 } | {
   t: "arc";
   x: number;
@@ -110,6 +114,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 } | {
   t: "text";
   x: number;
@@ -122,6 +127,7 @@ export type Prim = {
   weight?: Weight;
   dash?: Dash;
   fill?: Fill;
+  when?: When;
 };
 
 export type IconPort = {
@@ -660,6 +666,9 @@ export type AnalysisDef = {
   /** The package (toolkit) that provides it. */
   group?: string;
 };
+
+/** Draw this primitive only while the block's latest value is on (a number above 0.5, or true), or only while it is not (off, and before any value). Absent: always. */
+export type When = "on" | "off";
 
 /** Every message a backend sends. */
 export type ServerMsg =
