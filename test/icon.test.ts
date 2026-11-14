@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CORNER, DASH, FILL, FONT, iconNodes, iconValid, plateSize, SIZE, STROKE, WEIGHT } from "../src/icon.ts";
+import { CORNER, DASH, FILL, FONT, iconNodes, iconValid, isOn, plateSize, SIZE, STROKE, WEIGHT } from "../src/icon.ts";
 import type { IconDef, Prim } from "../src/protocol.ts";
 import { Ground, Inertia, Resistor } from "./fixtures/icons.ts";
 
@@ -87,4 +87,20 @@ test("plates grow on the 4px grid and {param} in text is filled", () => {
   for (const s of [plateSize({ w: 2 }), plateSize({ h: 2 })]) assert.ok(s.w % 4 === 0 && s.h % 4 === 0);
   const text = iconNodes(Resistor, "Resistor", (t) => t.replace("{R}", "100"))!.find((n) => n.tag === "text");
   assert.equal(text?.text, "100");
+});
+
+test("a primitive with `when` draws only while the block is on, or only while it is not", () => {
+  const lamp: IconDef = { g: [
+    { t: "ellipse", x: 30, y: 25, w: 40, h: 50, when: "off" },
+    { t: "ellipse", x: 30, y: 25, w: 40, h: 50, fill: "signal", when: "on" },
+    { t: "rect", x: 10, y: 10, w: 80, h: 80, fill: "screen" },
+  ] };
+  assert.ok(iconValid(lamp));
+  const off = iconNodes(lamp, "lamp")!, on = iconNodes(lamp, "lamp", undefined, true)!;
+  assert.equal(off.length, 2);
+  assert.equal(on.length, 2);
+  assert.equal(on[0].attrs.fill, "var(--signal)");
+  assert.equal(off[1].attrs.fill, "var(--surface-screen)");
+  assert.ok(!iconValid({ g: [{ t: "rect", x: 0, y: 0, w: 5, h: 5, when: "sometimes" as never }] }));
+  assert.ok(isOn(1) && isOn(true) && !isOn(0) && !isOn(0.5) && !isOn(undefined) && !isOn("1"));
 });
