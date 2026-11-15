@@ -28,6 +28,8 @@ export type InstalledPackage = {
   status?: string;
   /** Why it can't be removed; absent: it can. */
   keep?: string;
+  /** A newer release than `version`, offered as an update. */
+  update?: string;
 };
 
 export type PackageEnvironment = {
@@ -42,6 +44,8 @@ export type PackageEnvironment = {
   /** Keys in the foot (Update packages, Restart backend). */
   actions?: PackageAction[];
   remove?: (name: string) => void;
+  /** Install `version` over the installed one (a package's `update`). */
+  update?: (name: string, version: string) => void;
 };
 
 export type RegistryItem = {
@@ -220,9 +224,17 @@ export function PackagePanel({ runtime, environment, registry, busy, error, outp
             )}
             <div className="pk-list">
               {environment.packages.map((p) => (
-                <div className="pk-pkg" key={p.name}>
+                <div className={`pk-pkg${p.update && environment.update ? " has-update" : ""}`} key={p.name}>
                   <span className="nm">{p.name}</span>
-                  <span className="ver">{p.status ?? p.version ?? "—"}</span>
+                  <span className="ver">
+                    {p.status ?? p.version ?? "—"}
+                    {!p.status && p.update && <span className="upd has"> → {p.update}</span>}
+                  </span>
+                  {p.update && environment.update && !p.status && (
+                    <button type="button" className="key small" disabled={Boolean(busy)} title={`Update ${p.name} to ${p.update}`} onClick={() => environment.update!(p.name, p.update!)}>
+                      Update
+                    </button>
+                  )}
                   {environment.remove ? (
                     <Remove label={p.keep ?? `Remove ${p.name}`} disabled={Boolean(busy) || Boolean(p.keep)} onClick={() => environment.remove!(p.name)} />
                   ) : (
