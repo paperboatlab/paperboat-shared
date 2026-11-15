@@ -35,7 +35,7 @@ export type ParamDef = {
   default: boolean;
 } | {
   id: string;
-  type: "text" | "key" | "file" | "variable";
+  type: "text" | "key" | "file" | "variable" | "matrix";
   default: string;
 } | {
   id: string;
@@ -556,9 +556,9 @@ export type RunSettings = {
 export type Variable = {
   /** Letters, digits and _; not t, pi, e or a function's name. */
   name: string;
-  /** matrix: only a live Squero MX variable (source mx), its value the rows ("1 2; 3 4"); never a project variable. */
+  /** matrix: a matrix by its rows ("1 2; 3 4"), either a project variable or a live Squero MX variable (source mx). */
   type: "number" | "boolean" | "enum" | "text" | "file" | "matrix";
-  /** Of its type: a number, true / false, or text (enum: one of options). A live matrix too large to share has none and says why in note. */
+  /** Of its type: a number, true / false, text (enum: one of options), or matrix rows ("1 2; 3 4"). A live matrix too large to share has none and says why in note. */
   value?: number | boolean | string;
   /** A number or boolean variable's formula over other variables, instead of a value. */
   expr?: string;

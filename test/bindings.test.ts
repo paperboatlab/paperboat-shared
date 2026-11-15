@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fits, inlineLive, matrixLiteral } from "../src/bindings.ts";
+import { emptyOf, fits, inlineLive, matrixLiteral, parseMatrix } from "../src/bindings.ts";
 import type { ParamDef, Variable } from "../src/protocol.ts";
 
 test("matrixLiteral turns JSON rows into MATLAB-style text and keeps a literal", () => {
@@ -10,13 +10,28 @@ test("matrixLiteral turns JSON rows into MATLAB-style text and keeps a literal",
   assert.equal(matrixLiteral("1 0; 0 1"), "1 0; 0 1");
 });
 
+test("parseMatrix checks syntax and reports rows and columns", () => {
+  assert.deepEqual(parseMatrix("1 2; 3 4"), { rows: 2, cols: 2 });
+  assert.deepEqual(parseMatrix("[[1, 2], [3, 4]]"), { rows: 2, cols: 2 });
+  assert.deepEqual(parseMatrix("1, 2\n3, 4"), { rows: 2, cols: 2 });
+  assert.deepEqual(parseMatrix(""), { rows: 0, cols: 0 });
+  assert.deepEqual(parseMatrix("[]"), { rows: 0, cols: 0 });
+  assert.match((parseMatrix("1 2; 3") as { error: string }).error, /row 1 has 1 columns, expected 2/);
+  assert.match((parseMatrix("1 x") as { error: string }).error, /"x" is not a finite number/);
+  assert.match((parseMatrix("[1 2") as { error: string }).error, /unclosed "\["/);
+});
+
 const A: Variable = { name: "A", type: "matrix", value: "1 2; 3 4", source: "mx" };
 const k: Variable = { name: "k", type: "number", value: 2, source: "mx" };
+const note: Variable = { name: "note", type: "text", value: "hello" };
 
-test("a live matrix fits a text param, not a number or a file", () => {
-  assert.equal(fits(A, { id: "values", type: "text" } as ParamDef), true);
+test("a matrix fits a matrix param, not text, number or file; text does not fit matrix", () => {
+  assert.equal(fits(A, { id: "values", type: "matrix" } as ParamDef), true);
+  assert.equal(fits(A, { id: "values", type: "text" } as ParamDef), false);
   assert.equal(fits(A, { id: "gain", type: "number" } as ParamDef), false);
   assert.equal(fits(A, { id: "path", type: "file" } as ParamDef), false);
+  assert.equal(fits(note, { id: "values", type: "matrix" } as ParamDef), false);
+  assert.equal(emptyOf("matrix"), "1 0; 0 1");
 });
 
 test("inlineLive replaces live references with values and leaves the rest", () => {

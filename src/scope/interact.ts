@@ -3,6 +3,38 @@ import { valueAt } from "./math.ts";
 
 export type PanScaleOpts = { log?: boolean; reverse?: boolean };
 
+const LOG_MIN_BOUND = 1e-30;
+const LOG_MAX_BOUND = 1e30;
+
+/** Compute `[min, max]` for a Y scale, keeping log-scale bounds strictly positive so uPlot ticks terminate. */
+export function yScaleRange(
+  min: number | null,
+  max: number | null,
+  opts?: { log?: boolean; view?: [number, number] | null },
+): [number, number] {
+  const log = !!opts?.log;
+  const view = opts?.view;
+  if (view && Number.isFinite(view[0]) && Number.isFinite(view[1]) && view[0] < view[1] && (!log || view[0] > 0)) {
+    return log ? [Math.max(view[0], LOG_MIN_BOUND), Math.min(view[1], LOG_MAX_BOUND)] : view;
+  }
+  if (log) {
+    if (min === null || max === null || !Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) {
+      return [0.1, 10];
+    }
+    if (min === max) {
+      return [Math.max(min / 10, LOG_MIN_BOUND), Math.min(max * 10, LOG_MAX_BOUND)];
+    }
+    const factor = Math.pow(10, (Math.log10(max) - Math.log10(min)) * 0.08);
+    const lo = Math.max(min / factor, LOG_MIN_BOUND);
+    const hi = Math.min(max * factor, LOG_MAX_BOUND);
+    return lo < hi ? [lo, hi] : [lo / 10, lo * 10];
+  }
+  if (min === null || max === null || !Number.isFinite(min) || !Number.isFinite(max)) return [-1, 1];
+  if (min === max) return [min - 1, max + 1];
+  const pad = (max - min) * 0.08;
+  return [min - pad, max + pad];
+}
+
 /** Format a numeric coordinate or measurement value compactly for readouts. */
 export function formatCoord(x: number | null | undefined, digits = 3): string {
   if (x === null || x === undefined || !Number.isFinite(x)) return "–";

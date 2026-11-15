@@ -102,12 +102,71 @@ export function fits(v: Variable, def: ParamDef): boolean {
     case "enum":
       return v.type === "enum" && def.options.includes(String(v.value));
     case "text":
-      return v.type === "text" || v.type === "file" || v.type === "matrix"; // a matrix block's rows
+      return v.type === "text" || v.type === "file";
     case "file":
       return v.type === "text" || v.type === "file";
+    case "matrix":
+      return v.type === "matrix";
     default:
       return false; // a key belongs to its block
   }
+}
+
+const NUMBER_TOKEN = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+/** Parse MATLAB-style matrix text ("1 2; 3 4", newlines, commas, brackets) and report its shape or error. */
+export function parseMatrix(text: string): { rows: number; cols: number } | { error: string } {
+  let s = text.trim();
+  if (!s || s === "[]") return { rows: 0, cols: 0 };
+  if (s.startsWith("[")) {
+    let depth = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === "[") depth++;
+      else if (s[i] === "]") {
+        depth--;
+        if (depth === 0) {
+          if (i + 1 !== s.length) return { error: `unexpected "${s.slice(i + 1).trim()}" after "]"` };
+          s = s.slice(1, -1).trim();
+          break;
+        }
+      }
+    }
+    if (depth !== 0) return { error: 'unclosed "["' };
+  }
+  if (!s) return { rows: 0, cols: 0 };
+  const rowStrings: string[] = [];
+  if (s.startsWith("[")) {
+    let i = 0;
+    while (i < s.length) {
+      if (" \t\r\n,;".includes(s[i])) {
+        i++;
+        continue;
+      }
+      if (s[i] !== "[") return { error: `expected "[" to start a row, got "${s[i]}"` };
+      const close = s.indexOf("]", i + 1);
+      if (close < 0) return { error: 'unclosed "["' };
+      const inner = s.slice(i + 1, close);
+      if (inner.includes("[")) return { error: 'unexpected "[" inside row' };
+      rowStrings.push(inner);
+      i = close + 1;
+    }
+  } else {
+    if (s.includes("[") || s.includes("]")) return { error: 'unexpected "[" or "]"' };
+    rowStrings.push(...s.split(/[;\r\n]+/));
+  }
+  let rows = 0;
+  let cols = 0;
+  for (const raw of rowStrings) {
+    const tokens = raw.replaceAll(",", " ").trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) continue;
+    for (const tok of tokens) {
+      if (!NUMBER_TOKEN.test(tok) || !Number.isFinite(Number(tok))) return { error: `"${tok}" is not a finite number` };
+    }
+    if (rows === 0) cols = tokens.length;
+    else if (tokens.length !== cols) return { error: `row ${rows} has ${tokens.length} columns, expected ${cols}` };
+    rows++;
+  }
+  return { rows, cols };
 }
 
 const NAME = /^[A-Za-z_]\w*$/;
@@ -145,7 +204,7 @@ export function merged(defaults: Variables, mine: Variables | undefined): Variab
 
 /** The default value of a new variable of `type`. */
 export function emptyOf(type: Variable["type"], options?: string[]): Variable["value"] {
-  return type === "number" ? 0 : type === "boolean" ? false : type === "enum" ? (options?.[0] ?? "a") : "";
+  return type === "number" ? 0 : type === "boolean" ? false : type === "enum" ? (options?.[0] ?? "a") : type === "matrix" ? "1 0; 0 1" : "";
 }
 
 const tomlString = (s: string) => JSON.stringify(s);
