@@ -306,3 +306,31 @@ span.msg-source { cursor: default; }
 .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); background: var(--surface-sunken); }
 /* A tall window: the package manager. */
 .modal-window { width: min(660px, calc(100vw - 32px)); height: min(760px, calc(100vh - 64px)); }
+
+/* Help (Help.tsx): one window in every app, search over a list and the chosen page. */
+.help-window { width: min(960px, calc(100vw - 32px)); }
+.help-search { flex: none; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); }
+.help-search input { width: 100%; box-sizing: border-box; padding: 6px 10px; font: 400 var(--size-sm) var(--font-sans); color: var(--text); background: var(--surface-sunken); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.help-search input:focus { outline: none; border-color: var(--line-ink); }
+.help-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); }
+.help-list { margin: 0; padding: var(--space-2); list-style: none; overflow: auto; border-right: 1px solid var(--line); background: var(--surface-sunken); }
+.help-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; }
+.help-list li:hover { background: var(--surface-raised); }
+.help-list li.on { background: var(--surface-panel); box-shadow: inset 2px 0 0 var(--signal); }
+.help-list b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 var(--size-xs) var(--font-mono); color: var(--text); }
+.help-list small { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 var(--size-2xs) var(--font-sans); color: var(--text-muted); }
+.help-kind { font: 400 var(--size-2xs) var(--font-mono); color: var(--text-muted); text-transform: lowercase; }
+.help-empty { color: var(--text-muted); font: 400 var(--size-xs) var(--font-sans); cursor: default; }
+.help-page { min-width: 0; overflow: auto; padding: var(--space-4) var(--space-5); font: 400 var(--size-sm)/1.55 var(--font-sans); color: var(--text); }
+.help-page > header { display: flex; align-items: baseline; gap: 8px; margin-bottom: var(--space-3); }
+.help-page h2 { margin: 0; font: 600 var(--size-md) var(--font-mono); }
+.help-page p, .help-page ul { margin: 0 0 var(--space-3); }
+.help-page > h3 { margin: var(--space-4) 0 var(--space-2); font: 600 var(--size-2xs) var(--font-sans); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.help-page code { font: 400 0.92em var(--font-mono); padding: 0 3px; background: var(--surface-sunken); border-radius: 3px; }
+.help-page pre { overflow: auto; padding: var(--space-2) var(--space-3); background: var(--surface-sunken); border: 1px solid var(--line); border-radius: var(--radius-sm); font: 400 var(--size-xs) var(--font-mono); }
+.help-page pre code { padding: 0; background: none; }
+.help-page a { color: var(--text); text-decoration-color: var(--line-strong); text-underline-offset: 2px; }
+.help-html h1, .help-html h2, .help-html h3, .help-html h4 { margin: var(--space-4) 0 var(--space-2); font: 600 var(--size-sm) var(--font-sans); }
+.help-html img { max-width: 100%; }
+.help-html table { border-collapse: collapse; margin-bottom: var(--space-3); }
+.help-html td, .help-html th { padding: 2px 8px; border: 1px solid var(--line); font-size: var(--size-xs); }

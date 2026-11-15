@@ -62,7 +62,7 @@ export function chordMatches(c: Chord, e: KeyLike): boolean {
 
 /** "Ctrl+Shift+K". */
 export function describe(c: Chord): string {
-  const key = c.key.length === 1 ? c.key.toUpperCase() : c.key;
+  const key = c.key.charAt(0).toUpperCase() + c.key.slice(1); // "K", "F1", "Enter"
   return [c.ctrl && "Ctrl", c.alt && "Alt", c.shift && "Shift", key].filter(Boolean).join("+");
 }
 
