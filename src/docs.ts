@@ -6,7 +6,8 @@ import type { HelpItem, HelpPage, HelpProvider } from "./help.ts";
 
 export const DOCS_URL = "https://paperboatlab.github.io/";
 
-export type DocItem = { id: string; title: string; page: string; url: string; summary: string; html: string };
+/** `block`: a block's page; Help leaves it out, as the app draws its blocks from the live catalog. */
+export type DocItem = { id: string; title: string; page: string; url: string; summary: string; html: string; block?: string };
 /** One site's help.json. `blocks` is a block's prose by type, for a toolkit. */
 export type DocSite = { site: string; title: string; url: string; items: DocItem[]; blocks?: Record<string, string> };
 /** An entry of sites.json: `help` is its help.json, relative to the root. */
@@ -48,7 +49,7 @@ const OFFLINE = "doc:offline";
  */
 export function docsHelp(docs: Promise<DocSite[]> | (() => Promise<DocSite[]>), base = DOCS_URL): HelpProvider & { blockProse: (type: string, group?: string) => Promise<string | undefined> } {
   const index = (sites: DocSite[]) => {
-    const all = sites.flatMap((s) => s.items.map((item) => ({ site: s, item, id: `${DOC}${s.site}:${item.id}`, text: plain(item.html) })));
+    const all = sites.flatMap((s) => s.items.filter((item) => !item.block).map((item) => ({ site: s, item, id: `${DOC}${s.site}:${item.id}`, text: plain(item.html) })));
     return { sites, all, byId: new Map(all.map((e) => [e.id, e])) };
   };
   // A function is called on the first look, so an app fetches nothing until Help is used.

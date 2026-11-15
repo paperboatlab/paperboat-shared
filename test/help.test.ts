@@ -25,6 +25,7 @@ const site: DocSite = {
   site: "paperboat", title: "Paperboat", url: "https://x.test/paperboat/",
   items: [
     { id: "flow", title: "Flows", page: "Flows", url: "https://x.test/paperboat/flow.html", summary: "Signal and Step flows.", html: "<p>Signal and Step flows.</p>" },
+    { id: "blocks/pid", title: "PID", page: "PID", url: "https://x.test/toolkits/control/blocks/pid.html", summary: "A PID.", html: "<p>A PID.</p>", block: "pid" },
     { id: "flow#story-groups", title: "Story groups", page: "Flows", url: "https://x.test/paperboat/flow.html#story-groups", summary: "A procedure.", html: "<p>Make a Step flow read as a procedure. See <a href=\"https://x.test/paperboat/flow.html\">Flows</a>.</p>" },
   ],
   blocks: { pid: "<p>Tune kp first.</p>" },
@@ -36,6 +37,7 @@ test("docs help lists pages, then finds sections by title before text", async ()
   assert.equal(loads, 0, "nothing loads before Help is used");
   assert.deepEqual((await help.items("")).map((i) => i.title), ["Flows"]);
   assert.deepEqual((await help.items("procedure")).map((i) => i.title), ["Story groups"]);
+  assert.deepEqual((await help.items("pid")).map((i) => i.title), [], "block pages come from the live catalog");
   assert.deepEqual((await help.items("step flows")).map((i) => i.title), ["Flows", "Story groups"]);
   const page = await help.page("doc:paperboat:flow#story-groups");
   assert.equal(page?.link?.href, "https://x.test/paperboat/flow.html#story-groups");
