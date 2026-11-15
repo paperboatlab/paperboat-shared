@@ -27,13 +27,14 @@ export function sanitizeHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
-/** Plain text: blank lines split paragraphs, a line starting with "- " is a list item, `code` in backticks. */
+/** Plain text: blank lines split paragraphs, "## " starts a heading, "- " a list item, `code` in backticks. */
 function TextPage({ text }: { text: string }) {
   const inline = (s: string) => s.split("`").map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part));
   return (
     <>
       {text.split(/\n\s*\n/).map((block, i) => {
         const lines = block.split("\n").filter((l) => l.trim());
+        if (lines.length === 1 && lines[0].startsWith("## ")) return <h3 key={i}>{inline(lines[0].slice(3))}</h3>;
         if (lines.length && lines.every((l) => l.trimStart().startsWith("- ")))
           return <ul key={i}>{lines.map((l, j) => <li key={j}>{inline(l.trimStart().slice(2))}</li>)}</ul>;
         return <p key={i}>{inline(lines.join(" "))}</p>;

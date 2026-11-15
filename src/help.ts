@@ -2,7 +2,7 @@
 import { describe, type Chord, type Command } from "./commands.ts";
 
 export type HelpItem = { id: string; title: string; kind?: string; summary?: string };
-/** A page: `text` is plain paragraphs with `code` in backticks; `html` is sanitized before it's shown. */
+/** A page: `text` is plain paragraphs ("## " headings, "- " lists, `code` in backticks); `html` is sanitized before it's shown. */
 export type HelpPage = { title: string; kind?: string; text?: string; html?: string; link?: { label: string; href: string } };
 export type HelpProvider = {
   /** What matches the query (all of it is the app's: guides, symbols, classes, blocks). */
