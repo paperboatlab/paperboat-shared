@@ -31,7 +31,9 @@ const site: DocSite = {
 };
 
 test("docs help lists pages, then finds sections by title before text", async () => {
-  const help = docsHelp(Promise.resolve([site]));
+  let loads = 0;
+  const help = docsHelp(async () => { loads++; return [site]; });
+  assert.equal(loads, 0, "nothing loads before Help is used");
   assert.deepEqual((await help.items("")).map((i) => i.title), ["Flows"]);
   assert.deepEqual((await help.items("procedure")).map((i) => i.title), ["Story groups"]);
   assert.deepEqual((await help.items("step flows")).map((i) => i.title), ["Flows", "Story groups"]);
@@ -39,6 +41,7 @@ test("docs help lists pages, then finds sections by title before text", async ()
   assert.equal(page?.link?.href, "https://x.test/paperboat/flow.html#story-groups");
   assert.equal(help.link?.("https://x.test/paperboat/flow.html"), "Flows");
   assert.equal(await help.blockProse("pid", "control"), "<p>Tune kp first.</p>");
+  assert.equal(loads, 1, "loaded once");
 });
 
 test("docs that fail to load leave one topic that says so", async () => {

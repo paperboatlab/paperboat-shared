@@ -46,21 +46,24 @@ const OFFLINE = "doc:offline";
  * Help over loaded docs sites. With no query it lists each page once (a contents); with one, the
  * sections that have every word, best first. If nothing loaded, one topic says so and links the site.
  */
-export function docsHelp(docs: Promise<DocSite[]>, base = DOCS_URL): HelpProvider & { blockProse: (type: string, group?: string) => Promise<string | undefined> } {
-  const ready = docs.catch(() => [] as DocSite[]).then((sites) => {
+export function docsHelp(docs: Promise<DocSite[]> | (() => Promise<DocSite[]>), base = DOCS_URL): HelpProvider & { blockProse: (type: string, group?: string) => Promise<string | undefined> } {
+  const index = (sites: DocSite[]) => {
     const all = sites.flatMap((s) => s.items.map((item) => ({ site: s, item, id: `${DOC}${s.site}:${item.id}`, text: plain(item.html) })));
     return { sites, all, byId: new Map(all.map((e) => [e.id, e])) };
-  });
+  };
+  // A function is called on the first look, so an app fetches nothing until Help is used.
+  let pending: Promise<ReturnType<typeof index>> | undefined;
   // link() is synchronous: it reads what has loaded by the time a page with links is shown.
-  let loaded: Awaited<typeof ready> | undefined;
-  void ready.then((r) => { loaded = r; });
+  let loaded: ReturnType<typeof index> | undefined;
+  const ready = () =>
+    (pending ??= (typeof docs === "function" ? docs() : docs).catch(() => [] as DocSite[]).then((sites) => (loaded = index(sites))));
   const topic = (e: { site: DocSite; item: DocItem; id: string }): HelpItem => ({
     id: e.id, title: e.item.title, kind: e.site.title,
     summary: e.item.page === e.item.title ? e.item.summary : `${e.item.page} · ${e.item.summary}`,
   });
   return {
     async items(query) {
-      const { sites, all } = await ready;
+      const { sites, all } = await ready();
       if (!sites.length) return [{ id: OFFLINE, title: "Documentation unavailable", kind: "docs", summary: "open the docs online" }];
       const words = query.toLowerCase().split(/\s+/).filter(Boolean);
       if (!words.length) return all.filter((e) => !e.item.id.includes("#")).slice(0, MAX).map(topic);
@@ -74,7 +77,7 @@ export function docsHelp(docs: Promise<DocSite[]>, base = DOCS_URL): HelpProvide
     async page(id): Promise<HelpPage | null> {
       if (id === OFFLINE)
         return { title: "Documentation unavailable", kind: "docs", text: "Help couldn't load the documentation. Check the connection, or read it online.", link: { label: "Open the docs", href: base } };
-      const e = (await ready).byId.get(id);
+      const e = (await ready()).byId.get(id);
       return e ? { title: e.item.title, kind: e.item.page === e.item.title ? e.site.title : e.item.page, html: e.item.html, link: { label: "Open online", href: e.item.url } } : null;
     },
     link(href) {
@@ -83,7 +86,7 @@ export function docsHelp(docs: Promise<DocSite[]>, base = DOCS_URL): HelpProvide
       return hit ? hit.item.title : null;
     },
     async blockProse(type, group) {
-      const { sites } = await ready;
+      const { sites } = await ready();
       const own = sites.find((s) => s.site === `toolkits/${group}`);
       return own?.blocks?.[type] ?? sites.find((s) => s.blocks?.[type])?.blocks?.[type];
     },
