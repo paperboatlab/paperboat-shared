@@ -265,15 +265,17 @@ export function ProjectLabel({ name, dirty = false, onRename, what = "project" }
 }
 
 /**
- * Every app's top bar, the one layout: the wordmark, the menus with About, the project's name
- * (ProjectLabel), then `children`, which is the app's BarEnd.
+ * Every app's top bar, the one layout: the wordmark, the menus with About and Help, the project's
+ * name (ProjectLabel), then `children`, which is the app's BarEnd.
  */
-export function AppBar({ brand, commands, menuLabels, about, project, className = "", children }: {
+export function AppBar({ brand, commands, menuLabels, about, help, project, className = "", children }: {
   brand: ReactNode;
   commands: Command[];
   menuLabels?: Partial<Record<MenuId, string>>;
   /** The About key after the menus: what it opens is the app's. */
   about: { title: string; shown: boolean; onOpen: () => void };
+  /** The Help key, last: it opens the shared HelpWindow, as F1 does (helpCommand). */
+  help?: { shown: boolean; onOpen: () => void };
   /** The name in the middle; omit for none. */
   project?: { name: string; dirty?: boolean; onRename?: (name: string) => void; what?: string };
   className?: string;
@@ -287,6 +289,11 @@ export function AppBar({ brand, commands, menuLabels, about, project, className 
         <button type="button" className="menu-title" aria-haspopup="dialog" aria-expanded={about.shown} title={about.title} onClick={about.onOpen}>
           About
         </button>
+        {help && (
+          <button type="button" className="menu-title" aria-haspopup="dialog" aria-expanded={help.shown} title="Help (F1)" onClick={help.onOpen}>
+            Help
+          </button>
+        )}
       </div>
       {project && <ProjectLabel {...project} />}
       {children}
