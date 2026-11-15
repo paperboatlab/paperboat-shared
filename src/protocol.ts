@@ -773,6 +773,10 @@ export type ServerMsg =
     port?: string;
   }
   | {
+    type: "signals";
+    list: Extract<ServerMsg, { type: "signal" }>[];
+  }
+  | {
     type: "node.state";
     node: string;
     state: NodeState;
