@@ -8,6 +8,8 @@ export type HelpProvider = {
   /** What matches the query (all of it is the app's: guides, symbols, classes, blocks). */
   items: (query: string) => HelpItem[] | Promise<HelpItem[]>;
   page: (id: string) => HelpPage | null | Promise<HelpPage | null>;
+  /** A link in a page that stays in Help (`modelica://…`): the query it opens; null leaves it to the browser. */
+  link?: (href: string) => string | null;
 };
 
 /** F1, in every app. */

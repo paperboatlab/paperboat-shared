@@ -127,7 +127,17 @@ export function HelpWindow({ app, provider, commands = [], query: initial = "", 
                 {page.kind && <span className="help-kind">{page.kind}</span>}
               </header>
               {page.text && <TextPage text={page.text} />}
-              {html && <div className="help-html" dangerouslySetInnerHTML={{ __html: html }} />}
+              {html && (
+                <div
+                  className="help-html"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                  onClick={(e) => {
+                    const href = (e.target as HTMLElement).closest("a")?.getAttribute("href");
+                    const next = href ? provider.link?.(href) : null;
+                    if (next) { e.preventDefault(); setQuery(next); setChosen(null); }
+                  }}
+                />
+              )}
               {page.link && <p><a href={page.link.href} target="_blank" rel="noopener noreferrer">{page.link.label} ↗</a></p>}
             </>
           ) : (
