@@ -5,6 +5,7 @@ export * from "./protocol.ts";
 export * from "./flowTypes.ts";
 export * from "./commands.ts";
 export * from "./help.ts";
+export * from "./docs.ts";
 export * from "./bindings.ts";
 export * from "./storage.ts";
 export {

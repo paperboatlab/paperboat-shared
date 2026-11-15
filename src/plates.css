@@ -334,3 +334,8 @@ span.msg-source { cursor: default; }
 .help-html img { max-width: 100%; }
 .help-html table { border-collapse: collapse; margin-bottom: var(--space-3); }
 .help-html td, .help-html th { padding: 2px 8px; border: 1px solid var(--line); font-size: var(--size-xs); }
+/* The docs sites' HTML (Sphinx): notes, C++ signatures and their bodies. */
+.help-html .admonition { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-left: 2px solid var(--signal); border-radius: var(--radius-sm); }
+.help-html .admonition-title { margin: 0 0 4px; font-weight: 600; }
+.help-html dt.sig { padding: 4px 8px; font: 500 var(--size-xs) var(--font-mono); background: var(--surface-sunken); border-radius: var(--radius-sm); }
+.help-html dd { margin: 4px 0 var(--space-3) var(--space-4); }

@@ -10,6 +10,7 @@ export * from "./Menus.tsx";
 export * from "./Shell.tsx";
 export * from "./Modal.tsx";
 export * from "./help.ts";
+export * from "./docs.ts";
 export * from "./Help.tsx";
 export * from "./Dock.tsx";
 export * from "./Dashboard.tsx";
