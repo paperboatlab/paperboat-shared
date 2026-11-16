@@ -357,6 +357,8 @@ export type GraphNode = {
   comment_mode?: "out" | "through";
   /** User notes or documentation for this block. */
   comment?: string;
+  /** Shown unfolded on the canvas, as its card, instead of as a plate. Backends ignore it. */
+  unfolded?: boolean;
 };
 
 export type GraphEdge = {
@@ -427,6 +429,8 @@ export type GraphGroup = {
   /** Ports a subsystem or story shows as a block even where no wire crosses its edge yet, in order. Backends ignore it. */
   expose?: ({
     side: "in" | "out";
+    /** The port's name on the group's block; absent: node.port. */
+    name?: string;
     /** [node, port] inside the group: an input for side in, an output for side out. */
     to: [string, string];
   })[];

@@ -55,6 +55,9 @@ export {
   SIDES,
   type Placed as PlacedPort,
   placePorts, type Placed,
+  PORT_PITCH,
+  sideLength,
+  portOffset,
 
   movePort,
   resetPort,

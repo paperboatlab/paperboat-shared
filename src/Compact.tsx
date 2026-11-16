@@ -1,11 +1,11 @@
 import { Position } from "@xyflow/react";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { isRef } from "./bindings.ts";
 import { polynomial } from "./poly.ts";
 import { useDismiss } from "./dismiss.tsx";
 import { Icon } from "./Icon.tsx";
 import { iconValid, isOn, plateSize } from "./icon.ts";
-import { connectorHint, hasIconPorts, placeIconPorts, placePorts, portHint, portLabel, SIDES, signOf, type PortSides } from "./ports.ts";
+import { connectorHint, hasIconPorts, placeIconPorts, placePorts, portHint, portLabel, portOffset, sideLength, SIDES, signOf, type PortSides, type Side } from "./ports.ts";
 import type { BlockDef, Connectors, IconDef, ParamValue } from "./protocol.ts";
 import { PortHandle } from "./wireSnap.tsx";
 
@@ -37,9 +37,12 @@ export function captionValue(template: string | undefined, params: Record<string
 }
 
 /**
- * A simple block as a small plate (#70): a glyph in a 64×56 box, bare port dots (a port's
- * name shows on hover), and the block's name and main value as a caption. Click opens its
- * params in a popover; double-click unfolds it into the full card (`onExpand`).
+ * A simple block as a small plate (#70): a glyph in a box at least 64×56, port dots 16px apart
+ * (a side grows to fit them; from 4 on a side their short names show inside), and the block's
+ * name and main value as a caption. Double-click (or Enter) floats `card`, the block unfolded,
+ * over the plate to inspect and edit it, its port body exactly on the plate's; it closes when the
+ * block is deselected, on Escape or a press outside. A variable dragged from the sheet binds on
+ * the plate (`dropTake`): taken as is, or the card opens so one of its fields takes it.
  * `word` is what is happening to it (queued, running, cached, failed), said in words and in the outline.
  */
 export function CompactBlock({
@@ -51,8 +54,9 @@ export function CompactBlock({
   commented,
   word,
   progress,
-  onExpand,
-  popover,
+  card,
+  dropTake,
+  onTake,
   connectors,
   wires,
   live,
@@ -65,9 +69,11 @@ export function CompactBlock({
   commented?: boolean;
   word?: "queued" | "running" | "cached" | "failed";
   progress?: number;
-  onExpand: () => void;
-  /** The param rows shown in the popover. */
-  popover: ReactNode;
+  /** The block unfolded, floated over the plate on double-click; none: the plate doesn't open. */
+  card?: ReactNode;
+  /** What the plate does with what is dragged over it: "take" it as is (`onTake`), "open" the card for a field in it, or nothing. */
+  dropTake?: (e: DragEvent) => "take" | "open" | null;
+  onTake?: (e: DragEvent) => void;
   /** The block's latest value in a run, for icon primitives drawn `when` it is on or off. */
   live?: unknown;
   /** The catalog's connector classes, for `view.icon.ports`. */
@@ -76,6 +82,7 @@ export function CompactBlock({
   wires?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
+  const [over, setOver] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!selected) setOpen(false);
@@ -84,29 +91,47 @@ export function CompactBlock({
 
   const value = captionValue(def.view?.value, params);
   const glyphName = def.view?.glyph ? captionValue(def.view.glyph, params) : "const";
-  const spread = (n: number, i: number) => `${((i + 1) / (n + 1)) * 100}%`;
-  const hasParams = def.params.length > 0;
   const icon = iconValid(def.view?.icon) ? def.view?.icon : undefined; // else the plain plate
-  const size = icon ? plateSize(icon) : undefined;
   const placedPorts = placePorts(def, sides);
+  // Inside the 1px border: 54 tall and 62 wide at least, longer as a side's ports need.
+  const most = (a: Side, b: Side) => Math.max(placedPorts[a].length, placedPorts[b].length);
+  const least = icon ? plateSize(icon) : { w: 64, h: 56 }; // an icon's own size, else the plain plate's
+  // An icon with ports of its own places them itself; else the plate grows to fit its ports.
+  const size = hasIconPorts(icon) ? least : { w: sideLength(most("top", "bottom"), least.w - 2) + 2, h: sideLength(most("left", "right"), least.h - 2) + 2 };
+  const along = { v: size.h - 2, h: size.w - 2 };
   return (
     <div
       ref={root}
-      className={["compact-block", `kind-${def.kind}`, selected && "selected", commented && "commented", word && word, open && "open"].filter(Boolean).join(" ")}
-      onDoubleClick={onExpand}
+      className={["compact-block", `kind-${def.kind}`, selected && "selected", commented && "commented", word && word, open && "open", over && "drop-on"].filter(Boolean).join(" ")}
+      onDoubleClick={() => card && setOpen(true)}
+      onDragOver={(e) => {
+        const take = dropTake?.(e);
+        if (take === "open" && card) setOpen(true);
+        if (take !== "take") return;
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        setOver(false);
+        if (dropTake?.(e) !== "take") return;
+        e.preventDefault();
+        e.stopPropagation();
+        onTake?.(e);
+      }}
     >
       <div
         className="plate"
         role="button"
         tabIndex={0}
-        aria-expanded={hasParams ? open : undefined}
+        aria-expanded={card ? open : undefined}
         aria-label={`${def.label}${value ? ` ${value}` : ""}`}
-        style={size && { width: size.w, height: size.h }}
-        title={hasParams ? "Click for its params; double-click for the full block" : "Double-click for the full block"}
-        onClick={() => hasParams && setOpen(!open)}
+        style={{ width: size.w, height: size.h }}
+        title={card ? "Double-click to inspect and edit" : undefined}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
-          if ((e.key === "Enter" || e.key === " ") && hasParams) setOpen(!open);
+          if ((e.key === "Enter" || e.key === " ") && card) setOpen(!open);
         }}
       >
         {icon ? <Icon icon={icon} type={def.type} fill={(t) => captionValue(t, params)} on={isOn(live)} /> : <Glyph name={glyphName} />}
@@ -120,9 +145,10 @@ export function CompactBlock({
               return (
                 <Fragment key={side}>
                   {list.map((e, i) => {
-                    const coord = spread(list.length, i);
+                    const coord = `${portOffset(list.length, i, isVert ? along.v : along.h)}px`;
                     const inputIdx = e.dir === "in" ? def.inputs.findIndex((p) => p.id === e.port.id) : -1;
-                    const sign = inputIdx >= 0 ? signOf(def, params, inputIdx) : "";
+                    // A sign, else from 4 ports on a side, the port's short name beside its dot.
+                    const sign = (inputIdx >= 0 ? signOf(def, params, inputIdx) : "") || (isVert && list.length >= 4 ? e.port.id.slice(0, 3) : "");
                     const signStyle =
                       side === "left"
                         ? { left: 6, top: coord, transform: "translateY(-50%)" }
@@ -162,13 +188,9 @@ export function CompactBlock({
         <span className={word ? `cap-${word}` : undefined}>{word ?? def.label}</span>
         {value && <span className="plate-val">{value}</span>}
       </div>
-      {open && (
-        <div className="popover nodrag nowheel" onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <div className="popover-title">
-            {def.label}
-            <span>{id}</span>
-          </div>
-          {popover}
+      {open && card && (
+        <div className="block-float nodrag nowheel" style={{ left: `calc(50% - ${size.w / 2}px)` }} aria-label={`${def.label} ${id}`} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          {card}
         </div>
       )}
     </div>

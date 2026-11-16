@@ -79,6 +79,16 @@ export function placePorts(def: BlockDef, sides: PortSides | undefined): Record<
 }
 
 /**
+ * Ports on a side sit 16px apart, on the canvas grid, whatever their number: a side is as long
+ * as its ports need (`16n + 8`), at least `min`. A plate and a card share it, so unfolding a block
+ * never moves a port along its side. Lengths are inside the border.
+ */
+export const PORT_PITCH = 16;
+export const sideLength = (n: number, min: number) => Math.max(min, PORT_PITCH * n + 8);
+/** Where the `i`th of `n` ports sits along a side `length` long: centred on it, 16px apart. */
+export const portOffset = (n: number, i: number, length: number) => length / 2 + (i - (n - 1) / 2) * PORT_PITCH;
+
+/**
  * The layout with port `id` moved to `side`, `index`th among the other ports there.
  * undefined when that is the default layout, so a block whose ports are all home saves no `ports`.
  */

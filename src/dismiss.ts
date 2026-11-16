@@ -29,6 +29,8 @@ export type DismissOptions = {
  * of outside dismissal is a barrier: nothing under it closes.
  */
 export function dismissOnPress(open: readonly DismissLayer[], target: EventTarget | null): number[] {
+  // A press that may start dragging something (a variable from the sheet) onto a surface keeps it open.
+  if ((target as Element | null)?.closest?.('[draggable="true"]')) return [];
   const closing: number[] = [];
   for (let i = open.length - 1; i >= 0; i--) {
     const layer = open[i];
