@@ -13,6 +13,7 @@ export * from "./help.ts";
 export * from "./docs.ts";
 export * from "./Help.tsx";
 export * from "./Dock.tsx";
+export * from "./WaitScreen.tsx";
 export * from "./Dashboard.tsx";
 export * from "./Icon.tsx";
 export * from "./wireBends.tsx";

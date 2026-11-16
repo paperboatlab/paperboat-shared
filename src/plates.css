@@ -268,6 +268,32 @@ span.msg-source { cursor: default; }
 .run-options input::-webkit-inner-spin-button, .run-options input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .run-options input:disabled, .run-options select:disabled { opacity: 0.55; }
 
+@keyframes ripple-live {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(calc(var(--lr, 19.5px) * -1)); }
+  60% { transform: translateY(calc(var(--lr, 19.5px) * 0.33)); }
+  100% { transform: translateY(0); }
+}
+
+/* Busy feedback: the logo's water on its own, in the Paperboat logo's proportions (gap 1.25 dot,
+   lift 0.6 dot). Set --wave-dot to size it. */
+.wave { --wave-dot: 4px; --lr: calc(var(--wave-dot) * 0.6); display: inline-flex; gap: calc(var(--wave-dot) * 1.25); height: calc(var(--wave-dot) * 3); align-items: center; flex: none; vertical-align: middle; }
+.wave i { width: var(--wave-dot); height: var(--wave-dot); background: var(--signal); animation: ripple-live 1.4s var(--ease) infinite; }
+.wave i:nth-child(2) { animation-delay: 0.12s; }
+.wave i:nth-child(3) { animation-delay: 0.24s; }
+.wave i:nth-child(4) { animation-delay: 0.36s; }
+.wave i:nth-child(5) { animation-delay: 0.48s; }
+@media (prefers-reduced-motion: reduce) { .wave i { animation: none; } }
+
+/* The wait screen (WaitScreen): what an app is waiting for, in the middle of the surface it will
+   fill, over the wave; how long once it is slow, a hint once it is very slow, the words alone when
+   it failed. */
+.wait-screen { margin: auto; padding: var(--space-6); color: var(--text-muted); text-align: center; }
+.wait-screen p { margin: 0 0 var(--space-3); }
+.wait-screen .wait-hint { margin: var(--space-3) auto 0; font-size: var(--size-2xs); max-width: 44ch; }
+.wait-screen.failed p:first-child { color: var(--danger-text); }
+.wait-screen .wave { --wave-dot: 8px; }
+
 /* A key as a pill: Ctrl+Z, Esc. */
 .kbd { font: 500 var(--size-2xs) var(--font-mono); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: var(--radius-sm); padding: 0 5px; margin: 0 1px; color: var(--text); background: var(--surface-raised); white-space: nowrap; }
 
