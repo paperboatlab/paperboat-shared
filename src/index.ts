@@ -92,3 +92,5 @@ export * from "./clipboard.ts";
 export * from "./icon.ts";
 export * from "./geometry.ts";
 export * from "./canvasHotkeys.ts";
+// The plot palette and colormaps, pure data: usable without the plot components (tests, workers).
+export { MATLAB_COLORS, colormapCss, colormapStops, rgbHex, sampleColormap } from "./plot/colormaps.ts";
