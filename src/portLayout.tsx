@@ -27,8 +27,10 @@ export function usePortLayout(options: {
   name?: (p: PortDef) => string;
   /** A sign shown after an input's name (a Sum's + or −), if any. */
   sign?: (p: PortDef, dir: "in" | "out") => string;
+  /** Draw the ports' dots. A card floated over its plate doesn't: the plate's dots are the ports. */
+  handles?: boolean;
 }): { top: ReactNode; rows: ReactNode; bottom: ReactNode } {
-  const { id, sides: saved, save, disabled, name = (p: PortDef) => p.id, sign = () => "" } = options;
+  const { id, sides: saved, save, disabled, name = (p: PortDef) => p.id, sign = () => "", handles = true } = options;
   const def = { type: "", label: "", kind: "function", params: [], inputs: options.def.inputs, outputs: options.def.outputs } as BlockDef;
   const updateNodeInternals = useUpdateNodeInternals();
   const [moving, setMoving] = useState<{ id: string; sides: PortSides | undefined } | null>(null);
@@ -93,14 +95,14 @@ export function usePortLayout(options: {
         {name(p)}
         {sign(p, dir) && <span className="port-sign">{sign(p, dir)}</span>}
         {side !== "right" && unit}
-        <PortHandle type={dir === "in" ? "target" : "source"} position={POSITION[side]} id={p.id} />
+        {handles && <PortHandle type={dir === "in" ? "target" : "source"} position={POSITION[side]} id={p.id} />}
       </div>
     );
   };
 
   return {
     top: placed.top.length > 0 && <div className="port-strip top">{placed.top.map((e) => port(e, "top"))}</div>,
-    // Left and right ports share rows: the first input beside the first output, and so on.
+    // Left and right ports share rows, 16px apart as on the plate: the first input beside the first output.
     rows: Array.from({ length: Math.max(placed.left.length, placed.right.length) }, (_, i) => (
       <div key={i} className="port-row">
         {placed.left[i] ? port(placed.left[i], "left") : <span />}

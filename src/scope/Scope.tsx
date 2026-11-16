@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
-import { applyBoxZoom, cursorBind, drawXCursors, formatCoord, nearXCursor, panXRange, panYRange, zoomRangeAround } from "./interact.ts";
+import { applyBoxZoom, cursorBind, drawXCursors, formatCoord, nearXCursor, panXRange, panYRange, yScaleRange, zoomRangeAround } from "./interact.ts";
 import { findTrigger, spectrum, toCsv, valueAt } from "./math.ts";
 import type { ScopeChannel as Channel, TapPort } from "./types.ts";
 import { scopeWidget } from "./widget.ts";
@@ -228,7 +228,8 @@ export function Scope({ name, channels, version, live, settings, onSettings, sma
 
   // ---- The plot: made again when what it draws changes shape, fed on every version ----
   const showGrid = settings.grid !== false;
-  const shape = JSON.stringify([mode, draw, settings.ylog ?? false, showGrid, tool, units, shown.map(({ c, k }) => [c.id, k, c.label]), theme, small]);
+  const useLogY = mode === "time" && !!settings.ylog;
+  const shape = JSON.stringify([mode, draw, useLogY, showGrid, tool, units, shown.map(({ c, k }) => [c.id, k, c.label]), theme, small]);
   useLayoutEffect(() => {
     const el = host.current;
     if (!el || !shown.length) return;
@@ -273,13 +274,9 @@ export function Scope({ name, channels, version, live, settings, onSettings, sma
         points: { show: draw === "points" || draw === "line+points", size: draw === "points" ? 4 : 5, width: 1, stroke, fill: draw === "points" ? stroke : screen },
       });
     }
-    const yRange: uPlot.Scale.Range = (_u, min, max) => {
-      if (view.current.y) return view.current.y;
-      if (min === null || max === null || !Number.isFinite(min) || !Number.isFinite(max)) return [-1, 1];
-      if (min === max) return [min - 1, max + 1];
-      const pad = (max - min) * 0.08;
-      return [min - pad, max + pad];
-    };
+    if (useLogY && view.current.y && view.current.y[0] <= 0) view.current.y = null;
+    const yRange: uPlot.Scale.Range = (_u, min, max) => yScaleRange(min, max, { log: useLogY, view: view.current.y });
+    const y2Range: uPlot.Scale.Range = (_u, min, max) => yScaleRange(min, max, { view: view.current.y });
     const axes: uPlot.Axis[] = [
       { ...axis("x", 2), grid },
       axis("y", 3),
@@ -294,8 +291,8 @@ export function Scope({ name, channels, version, live, settings, onSettings, sma
       padding: [small ? 6 : 14, 18, 0, 0],
       scales: {
         x: mode === "fft" ? { time: false, distr: 3 } : { time: false, ...(mode === "time" ? { range: (_u: uPlot, min: number, max: number) => view.current.x ?? [min, max] } : {}) },
-        y: mode === "fft" ? { range: yRange } : { range: yRange, ...(settings.ylog ? { distr: 3 } : {}) },
-        y2: { range: (_u: uPlot, min: number, max: number) => yRange(_u, min, max, "y2") },
+        y: useLogY ? { range: yRange, distr: 3 } : { range: yRange },
+        y2: { range: y2Range },
       },
       axes,
       series,
@@ -441,7 +438,7 @@ export function Scope({ name, channels, version, live, settings, onSettings, sma
     if (d.kind === "pan") {
       // Both axes move with the pointer: a zoomed y view pans up and down too.
       view.current.x = panXRange(d.min, d.max, p.x - d.x0, p.w);
-      view.current.y = panYRange(d.ymin ?? 0, d.ymax ?? 0, p.y - (d.y0 ?? p.y), p.h, { log: !!settings.ylog });
+      view.current.y = panYRange(d.ymin ?? 0, d.ymax ?? 0, p.y - (d.y0 ?? p.y), p.h, { log: useLogY });
       if (!frozen) setFrozen(true); // panning back in time freezes the Scope
       u.redraw(true);
     } else if (d.kind === "cursor" && cursors) {
@@ -470,7 +467,7 @@ export function Scope({ name, channels, version, live, settings, onSettings, sma
       const f = e.deltaY > 0 ? 1.25 : 0.8;
       if (e.shiftKey) {
         const at = u.posToVal(p.y, "y"), [a, b] = [u.scales.y.min ?? 0, u.scales.y.max ?? 1];
-        view.current.y = zoomRangeAround(a, b, at, f, !!settings.ylog);
+        view.current.y = zoomRangeAround(a, b, at, f, useLogY);
       } else {
         const at = u.posToVal(p.x, "x"), [a, b] = [u.scales.x.min ?? 0, u.scales.x.max ?? 1];
         view.current.x = zoomRangeAround(a, b, at, f);

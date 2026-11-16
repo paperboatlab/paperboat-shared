@@ -38,7 +38,7 @@
 .glyph .ax { stroke: var(--line-strong); stroke-width: 1; }
 .glyph text { fill: var(--text); stroke: none; font: 500 17px var(--font-mono); }
 /* Sum's signs (#73): beside each input, inside the plate or in the port row. */
-.plate-sign { position: absolute; left: 6px; transform: translateY(-50%); font: 600 var(--size-xs) / 1 var(--font-mono); color: var(--text); pointer-events: none; }
+.plate-sign { position: absolute; transform: translateY(-50%); font: 600 var(--size-xs) / 1 var(--font-mono); color: var(--text); pointer-events: none; }
 .port-sign { margin-left: 6px; font: 600 var(--size-xs) var(--font-mono); color: var(--text); }
 .plate-prog { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--signal); border-radius: 0 0 0 4px; }
 .plate-cap { display: flex; gap: 5px; white-space: nowrap; font: 400 var(--size-2xs) var(--font-sans); color: var(--text-muted); }
@@ -57,7 +57,14 @@
 .react-flow__handle-bottom .port-tip { top: 14px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); }
 .react-flow__handle:hover .port-tip { display: block; }
 .react-flow__handle.t-image { border-style: dashed; }
-/* E1: its params in a popover under the plate; the only glass, like the Station's properties. */
+/* The card floated over its plate (double-click): its port body exactly on the plate's, its head
+   (28px) above, raised over the canvas until the block is deselected. */
+.block-float { position: absolute; top: -28px; z-index: 30; cursor: default; text-align: left; }
+.block-float > * { box-shadow: var(--shadow-1); animation: float-in var(--glide); }
+@keyframes float-in { from { opacity: 0; transform: translateY(4px); } }
+.react-flow__node:has(.block-float) { z-index: 1000 !important; }
+/* A variable dragged over a plate that takes it as is. */
+.compact-block.drop-on .plate { outline: 2px solid var(--signal); outline-offset: 3px; }
 
 /* ---- Custom block look (#160): view.icon and connector ports ----------------------------- */
 .icon-art { display: block; pointer-events: none; }

@@ -47,3 +47,10 @@ test("Escape closes only the top layer, and stops at one that opts out", () => {
   assert.equal(dismissOnEscape([under, layer("quiet", inside("quiet"), { escape: false })]), undefined);
   assert.equal(dismissOnEscape([]), undefined);
 });
+
+test("a press on something draggable (a variable on its way to a field) closes nothing", () => {
+  const card = layer("card", inside("card"));
+  const handle = { id: "row", closest: (sel: string) => (sel === '[draggable="true"]' ? {} : null) } as unknown as EventTarget;
+  assert.deepEqual(dismissOnPress([card], handle), []);
+  assert.deepEqual(dismissOnPress([card], target("canvas")), [0]);
+});

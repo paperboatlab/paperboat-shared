@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { yScaleRange } from "../src/scope/interact.ts";
 import { findTrigger, spectrum, stats, toCsv, valueAt } from "../src/scope/math.ts";
 
 test("trigger, spectrum, stats, values and CSV", () => {
@@ -35,6 +36,22 @@ test("scope tracking vs squishing time span behavior", () => {
   // Squishing mode: full bounds [t0, t1]
   const squishingRange = [t0, t1];
   assert.deepEqual(squishingRange, [0, 25]);
+});
+
+test("yScaleRange keeps log-y bounds strictly positive", () => {
+  assert.deepEqual(yScaleRange(null, null, { log: true }), [0.1, 10]);
+  assert.deepEqual(yScaleRange(0, 0, { log: true }), [0.1, 10]);
+  assert.deepEqual(yScaleRange(-2, 5, { log: true }), [0.1, 10]);
+  assert.deepEqual(yScaleRange(1, 1, { log: true }), [0.1, 10]);
+  const [lo, hi] = yScaleRange(0.01, 1, { log: true });
+  assert.ok(lo > 0 && lo < 0.01 && hi > 1);
+  // Non-positive cached linear zoom view is ignored when log mode is active.
+  assert.deepEqual(yScaleRange(1, 100, { log: true, view: [-1, 2] }).map((v) => v > 0), [true, true]);
+  assert.deepEqual(yScaleRange(2, 8, { log: true, view: [2, 8] }), [2, 8]);
+  // Linear mode behavior is unchanged.
+  assert.deepEqual(yScaleRange(null, null), [-1, 1]);
+  assert.deepEqual(yScaleRange(0, 0), [-1, 1]);
+  assert.deepEqual(yScaleRange(0, 10), [-0.8, 10.8]);
 });
 
 test("the scope imports only React and uPlot, so any app can mount it", () => {

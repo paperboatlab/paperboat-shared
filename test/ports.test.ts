@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { connectError, connectorHint, hasIconPorts, iconEnd, inForm, netWireType, placeIconPorts, placePorts, signalEnd } from "../src/ports.ts";
+import { connectError, connectorHint, hasIconPorts, iconEnd, inForm, netWireType, placeIconPorts, placePorts, portOffset, sideLength, signalEnd } from "../src/ports.ts";
 import type { BlockDef, IconDef } from "../src/protocol.ts";
 import { connectors, Ground, Inertia, Resistor } from "./fixtures/icons.ts";
 
@@ -130,3 +130,12 @@ test("placePorts respects custom PortSides for rotated and flipped compact block
   assert.deepEqual(rotatedCW.right, []);
 });
 
+
+test("ports sit 16px apart, centred, on a side as long as they need", () => {
+  assert.equal(sideLength(1, 54), 54);
+  assert.equal(sideLength(3, 54), 56);
+  assert.equal(sideLength(10, 54), 168);
+  assert.equal(portOffset(1, 0, 54), 27);
+  const L = sideLength(10, 54);
+  assert.deepEqual([portOffset(10, 0, L), portOffset(10, 9, L)], [12, 156]);
+});
