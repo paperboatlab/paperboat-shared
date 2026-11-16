@@ -406,7 +406,7 @@ export type DashboardLayout = {
   })[];
 };
 
-/** A group of blocks. subsystem: a block you open to see its insides, like a Simulink subsystem; its ports are the wires crossing its edge. story: a subsystem that runs as one step of a Step flow (ports in -> next): its blocks once per clock step for params.seconds (0: once), fresh each time if params.reset. visual: a frame that tidies the canvas only. Groups nest (parent); the graph's wires stay flat, block to block, so backends treat a subsystem or a frame as if it weren't there. */
+/** A group of blocks. subsystem: a block you open to see its insides, like a Simulink subsystem; its ports are its inport and outport blocks (In, Out) and the wires crossing its edge. story: a subsystem that runs as one step of a Step flow (ports in -> next): its blocks once per clock step for params.seconds (0: once), fresh each time if params.reset. visual: a frame that tidies the canvas only. Groups nest (parent); the graph's wires stay flat, block to block, so backends treat a subsystem or a frame as if it weren't there. */
 export type GraphGroup = {
   id: string;
   kind: "visual" | "subsystem" | "story";
@@ -429,8 +429,6 @@ export type GraphGroup = {
   /** Ports a subsystem or story shows as a block even where no wire crosses its edge yet, in order. Backends ignore it. */
   expose?: ({
     side: "in" | "out";
-    /** The port's name on the group's block; absent: node.port. */
-    name?: string;
     /** [node, port] inside the group: an input for side in, an output for side out. */
     to: [string, string];
   })[];
