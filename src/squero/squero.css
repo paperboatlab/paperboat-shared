@@ -13,7 +13,7 @@
 .squero-logo.logo-idle .squero-logo-water .w3 { animation-delay: 0.4s; }
 .squero-logo.logo-idle .squero-logo-water .w4 { animation-delay: 0.6s; }
 .squero-logo.logo-idle .squero-logo-water .w5 { animation-delay: 0.8s; }
-.squero-logo.logo-live .squero-logo-water .w { animation: squero-ripple-live 1.4s var(--ease) infinite; }
+.squero-logo.logo-live .squero-logo-water .w { animation: ripple-live 1.4s var(--ease) infinite; }
 .squero-logo.logo-live .squero-logo-water .w1 { animation-delay: 0s; }
 .squero-logo.logo-live .squero-logo-water .w2 { animation-delay: 0.12s; }
 .squero-logo.logo-live .squero-logo-water .w3 { animation-delay: 0.24s; }
@@ -23,24 +23,8 @@
   0%, 25%, 100% { transform: translateY(0); }
   12.5% { transform: translateY(calc(var(--lr, 19.5px) * -0.67)); }
 }
-@keyframes squero-ripple-live {
-  0% { transform: translateY(0); }
-  30% { transform: translateY(calc(var(--lr, 19.5px) * -1)); }
-  60% { transform: translateY(calc(var(--lr, 19.5px) * 0.33)); }
-  100% { transform: translateY(0); }
-}
-
-/* Busy feedback: the logo's water on its own, in the Paperboat logo's proportions (gap 1.25 dot,
-   lift 0.6 dot). Set --wave-dot to size it. */
-.wave { --wave-dot: 4px; --lr: calc(var(--wave-dot) * 0.6); display: inline-flex; gap: calc(var(--wave-dot) * 1.25); height: calc(var(--wave-dot) * 3); align-items: center; flex: none; vertical-align: middle; }
-.wave i { width: var(--wave-dot); height: var(--wave-dot); background: var(--signal); animation: squero-ripple-live 1.4s var(--ease) infinite; }
-.wave i:nth-child(2) { animation-delay: 0.12s; }
-.wave i:nth-child(3) { animation-delay: 0.24s; }
-.wave i:nth-child(4) { animation-delay: 0.36s; }
-.wave i:nth-child(5) { animation-delay: 0.48s; }
-
 @media (prefers-reduced-motion: reduce) {
-  .squero-logo .w, .wave i { animation: none !important; }
+  .squero-logo .w { animation: none !important; }
 }
 
 
