@@ -2,6 +2,7 @@
   "name": "@paperboat/shared",
   "version": "0.1.5",
   "description": "Paperboat's shared UI kit: tokens, Geist fonts, controls, blocks and ports, view.icon renderer, dashboard, shell, canvas utilities. No domain logic.",
+  "license": "GPL-3.0-only",
   "private": true,
   "type": "module",
   "main": "src/index.ts",
