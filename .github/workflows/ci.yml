@@ -3,7 +3,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 concurrency:
@@ -34,7 +34,7 @@ jobs:
         app:
           - { name: paperboat, repo: paperboatlab/paperboat, dir: paperboat/apps/web, ref: dev }
           - { name: squero-studio-om, repo: paperboatlab/squero-studio-om, dir: squero-studio-om, ref: dev }
-          - { name: squero-studio-mx, repo: paperboatlab/squero-studio-mx, dir: squero-studio-mx, ref: main }
+          - { name: squero-studio-mx, repo: paperboatlab/squero-studio-mx, dir: squero-studio-mx, ref: dev }
     steps:
       # Side by side, so the apps' "file:../paperboat-shared" resolves to this checkout.
       - uses: actions/checkout@v4
