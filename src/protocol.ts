@@ -482,6 +482,8 @@ export type StationView = {
   page?: string;
   /** Whether the Station page is offered (default true). False hides it in every view mode; the user can still show it from View. */
   visible?: boolean;
+  /** Which 3D corner orientation widget to show on a scene station (default "cube"). */
+  orientation?: "cube" | "axes";
 };
 
 /** A changed entity in scene.patch: its id and what changed. */

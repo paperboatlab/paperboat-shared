@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { emptyOf, fits, inlineLive, matrixLiteral, parseMatrix } from "../src/bindings.ts";
+import { emptyOf, fits, inlineLive, matrixLiteral, parseMatrix, parseMatrixCells } from "../src/bindings.ts";
 import type { ParamDef, Variable } from "../src/protocol.ts";
 
 test("matrixLiteral turns JSON rows into MATLAB-style text and keeps a literal", () => {
@@ -19,6 +19,8 @@ test("parseMatrix checks syntax and reports rows and columns", () => {
   assert.match((parseMatrix("1 2; 3") as { error: string }).error, /row 1 has 1 columns, expected 2/);
   assert.match((parseMatrix("1 x") as { error: string }).error, /"x" is not a finite number/);
   assert.match((parseMatrix("[1 2") as { error: string }).error, /unclosed "\["/);
+  assert.deepEqual(parseMatrixCells("1 2; 3 4"), { rows: 2, cols: 2, cells: [[1, 2], [3, 4]] });
+  assert.deepEqual(parseMatrixCells("[[1.5, -2], [3e1, 4]]"), { rows: 2, cols: 2, cells: [[1.5, -2], [30, 4]] });
 });
 
 const A: Variable = { name: "A", type: "matrix", value: "1 2; 3 4", source: "mx" };

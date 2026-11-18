@@ -97,7 +97,186 @@ const DIR: Record<Side, [number, number]> = {
 
 /** How far a wire runs straight out of its port before it may turn. */
 const STUB = 16;
+const CLEARANCE = 12;
+const LANE_PITCH = 12;
+const OVERLAP_TOL = 8;
 const horizontal = (side: Side) => side === "left" || side === "right";
+
+type Rect = { left: number; top: number; right: number; bottom: number };
+
+const rectOf = (o: Obstacle, pad = 0): Rect => ({
+  left: o.x - pad,
+  top: o.y - pad,
+  right: o.x + o.width + pad,
+  bottom: o.y + o.height + pad,
+});
+
+function segmentHitsRect(a: Point, b: Point, r: Rect): boolean {
+  if (a[1] === b[1]) {
+    const y = a[1];
+    const minX = Math.min(a[0], b[0]);
+    const maxX = Math.max(a[0], b[0]);
+    return y > r.top && y < r.bottom && maxX > r.left && minX < r.right;
+  }
+  if (a[0] === b[0]) {
+    const x = a[0];
+    const minY = Math.min(a[1], b[1]);
+    const maxY = Math.max(a[1], b[1]);
+    return x > r.left && x < r.right && maxY > r.top && minY < r.bottom;
+  }
+  return false;
+}
+
+function blockingObstacles(
+  points: readonly Point[],
+  source: string,
+  target: string,
+  obstacles: readonly Obstacle[],
+  pad = CLEARANCE,
+): Obstacle[] {
+  if (points.length < 2 || obstacles.length === 0) return [];
+  const hits: Obstacle[] = [];
+  for (const o of obstacles) {
+    const endpoint = o.id === source || o.id === target;
+    const r = rectOf(o, endpoint ? -1 : pad);
+    const startIdx = endpoint ? 1 : 0;
+    const endIdx = endpoint ? points.length - 3 : points.length - 2;
+    let hit = false;
+    for (let i = startIdx; i <= endIdx; i++) {
+      if (segmentHitsRect(points[i], points[i + 1], r)) {
+        hit = true;
+        break;
+      }
+    }
+    if (hit) hits.push(o);
+  }
+  return hits;
+}
+
+type PlacedSegment = {
+  wireId: string;
+  sourceKey: string;
+  targetKey: string;
+  isFirst: boolean;
+  isLast: boolean;
+  axis: "h" | "v";
+  pos: number;
+  min: number;
+  max: number;
+};
+
+function segmentsOf(
+  points: readonly Point[],
+  wireId: string,
+  sourceKey: string,
+  targetKey: string,
+): PlacedSegment[] {
+  const out: PlacedSegment[] = [];
+  for (let i = 0; i + 1 < points.length; i++) {
+    const [a, b] = [points[i], points[i + 1]];
+    if (a[0] === b[0] && a[1] === b[1]) continue;
+    const axis: "h" | "v" = a[1] === b[1] ? "h" : "v";
+    const pos = axis === "h" ? a[1] : a[0];
+    const min = axis === "h" ? Math.min(a[0], b[0]) : Math.min(a[1], b[1]);
+    const max = axis === "h" ? Math.max(a[0], b[0]) : Math.max(a[1], b[1]);
+    out.push({
+      wireId,
+      sourceKey,
+      targetKey,
+      isFirst: i === 0,
+      isLast: i === points.length - 2,
+      axis,
+      pos,
+      min,
+      max,
+    });
+  }
+  return out;
+}
+
+function segmentsCollinearOverlap(a: PlacedSegment, b: PlacedSegment): boolean {
+  if (a.axis !== b.axis) return false;
+  if (Math.abs(a.pos - b.pos) >= OVERLAP_TOL) return false;
+  if (Math.min(a.max, b.max) - Math.max(a.min, b.min) <= 2) return false;
+  // Intentional fan-out stem from the exact same source port or fan-in stub into the same target port.
+  if (a.sourceKey === b.sourceKey && a.isFirst && b.isFirst) return false;
+  if (a.targetKey === b.targetKey && a.isLast && b.isLast) return false;
+  return true;
+}
+
+function countOverlaps(segs: readonly PlacedSegment[], placed: readonly PlacedSegment[]): number {
+  let overlaps = 0;
+  for (const s of segs) {
+    for (const p of placed) {
+      if (segmentsCollinearOverlap(s, p)) overlaps++;
+    }
+  }
+  return overlaps;
+}
+
+function manhattanLength(points: readonly Point[]): number {
+  let len = 0;
+  for (let i = 0; i + 1 < points.length; i++) {
+    len += Math.abs(points[i + 1][0] - points[i][0]) + Math.abs(points[i + 1][1] - points[i][1]);
+  }
+  return len;
+}
+
+export type RouteScore = {
+  insideBlocks: number;
+  clearanceHits: number;
+  collinearOverlaps: number;
+  crossings: number;
+  bends: number;
+  length: number;
+};
+
+/** Score routed wires against block obstacles and each other (for auto-arrange candidate selection). */
+export function scoreWireRoutes(
+  routes: Iterable<WireRoute>,
+  wires: readonly RouteInput[],
+  obstacles: readonly Obstacle[],
+): RouteScore {
+  const byId = new Map(wires.map((w) => [w.id, w]));
+  const allSegs: PlacedSegment[] = [];
+  let insideBlocks = 0;
+  let clearanceHits = 0;
+  let bends = 0;
+  let length = 0;
+
+  for (const r of routes) {
+    const w = byId.get(r.id);
+    if (!w) continue;
+    insideBlocks += blockingObstacles(r.points, w.source, w.target, obstacles, 0).length;
+    clearanceHits += blockingObstacles(r.points, w.source, w.target, obstacles, 8).length;
+    bends += Math.max(0, r.points.length - 2);
+    length += manhattanLength(r.points);
+    const sKey = `${w.source}:${w.sourceHandle ?? ""}`;
+    const tKey = `${w.target}:${w.targetHandle ?? ""}`;
+    allSegs.push(...segmentsOf(r.points, r.id, sKey, tKey));
+  }
+
+  let collinearOverlaps = 0;
+  let crossings = 0;
+  for (let i = 0; i < allSegs.length; i++) {
+    const a = allSegs[i];
+    for (let j = i + 1; j < allSegs.length; j++) {
+      const b = allSegs[j];
+      if (a.wireId === b.wireId) continue;
+      if (a.axis === b.axis) {
+        if (segmentsCollinearOverlap(a, b)) collinearOverlaps++;
+      } else {
+        const h = a.axis === "h" ? a : b;
+        const v = a.axis === "v" ? a : b;
+        if (v.pos > h.min + 1 && v.pos < h.max - 1 && h.pos > v.min + 1 && h.pos < v.max - 1) {
+          crossings++;
+        }
+      }
+    }
+  }
+
+  return { insideBlocks, clearanceHits, collinearOverlaps, crossings, bends, length };
+}
 
 /** Drop repeated corners and corners on a straight run (but keep a turn back). */
 export function simplify(points: readonly Point[]): Point[] {
@@ -273,21 +452,169 @@ export function routeWires(
     }
   }
 
-  // --- Forward wires (signal and step): square, a channel per wire into a shared target ---
+  // --- Forward wires (signal and step): obstacle-aware, parallel-lane separated ---
+  const baseChannelByWire = new Map<string, number>();
   for (const list of byPort(forwardWires, "target").values()) {
     list.sort((a, b) => a.sy - b.sy || byText(a.id, b.id));
     const count = list.length;
     list.forEach((w, lane) => {
       const sSide = w.sourcePosition ?? "right";
       const tSide = w.targetPosition ?? "left";
-      let channel: number | undefined;
       if (sSide === "right" && tSide === "left" && count > 1) {
-        const midX = (w.sx + w.tx) / 2 + (lane - (count - 1) / 2) * 12;
-        channel = Math.max(w.sx + STUB, Math.min(w.tx - STUB, midX));
+        const midX = (w.sx + w.tx) / 2 + (lane - (count - 1) / 2) * LANE_PITCH;
+        baseChannelByWire.set(w.id, Math.max(w.sx + STUB, Math.min(w.tx - STUB, midX)));
       }
-      const points = orthoPoints([w.sx, w.sy], sSide, [w.tx, w.ty], tSide, channel);
-      const [labelX, labelY] = middleOf(points);
-      results.set(w.id, { id: w.id, kind: w.step ? "step" : "forward", points, path: roundedPolyline(points, 8), labelX, labelY });
+    });
+  }
+
+  const orderedForward = [...forwardWires].sort(
+    (a, b) =>
+      Math.min(a.sx, a.tx) - Math.min(b.sx, b.tx) ||
+      Math.min(a.sy, a.ty) - Math.min(b.sy, b.ty) ||
+      a.sx - b.sx ||
+      a.sy - b.sy ||
+      byText(a.id, b.id),
+  );
+
+  const placedSegments: PlacedSegment[] = [];
+
+  for (const w of orderedForward) {
+    const sSide = w.sourcePosition ?? "right";
+    const tSide = w.targetPosition ?? "left";
+    const sKey = `${w.source}:${w.sourceHandle ?? ""}`;
+    const tKey = `${w.target}:${w.targetHandle ?? ""}`;
+    const baseChannel = baseChannelByWire.get(w.id);
+
+    const candidates: Point[][] = [];
+    const seen = new Set<string>();
+    const addCandidate = (raw: Point[]) => {
+      const pts = simplify(raw);
+      const key = pts.map((p) => `${p[0]},${p[1]}`).join(";");
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push(pts);
+      }
+    };
+
+    // 1. Direct orthogonal route + channel shifts for parallel vertical separation
+    addCandidate(orthoPoints([w.sx, w.sy], sSide, [w.tx, w.ty], tSide, baseChannel));
+    if (horizontal(sSide) && horizontal(tSide) && (w.tx - w.sx) * DIR[sSide][0] >= 2 * STUB && DIR[sSide][0] === -DIR[tSide][0]) {
+      const center = baseChannel ?? (w.sx + w.tx) / 2;
+      const minCh = Math.min(w.sx, w.tx) + STUB;
+      const maxCh = Math.max(w.sx, w.tx) - STUB;
+      for (const delta of [12, -12, 24, -24, 36, -36, 48, -48, 60, -60]) {
+        const ch = Math.max(minCh, Math.min(maxCh, center + delta));
+        addCandidate(orthoPoints([w.sx, w.sy], sSide, [w.tx, w.ty], tSide, ch));
+      }
+    }
+
+    // 2. Horizontal jogs if direct horizontal run overlaps another wire on the same y
+    const directHits = blockingObstacles(candidates[0], w.source, w.target, obstacles, CLEARANCE);
+    const directOverlaps = countOverlaps(segmentsOf(candidates[0], w.id, sKey, tKey), placedSegments);
+
+    if (directOverlaps > 0 && sSide === "right" && tSide === "left" && w.tx - w.sx >= 2 * STUB) {
+      const x1 = w.sx + STUB;
+      const x2 = w.tx - STUB;
+      for (const dy of [-12, 12, -24, 24, -36, 36, -48, 48]) {
+        const jy = Math.round((w.sy + w.ty) / 2) + dy;
+        addCandidate([[w.sx, w.sy], [x1, w.sy], [x1, jy], [x2, jy], [x2, w.ty], [w.tx, w.ty]]);
+      }
+    }
+
+    // 3. Obstacle-avoiding detours when any obstacle blocks or parallel lanes collide
+    if (directHits.length > 0 || directOverlaps > 0) {
+      const spanMinX = Math.min(w.sx, w.tx) - STUB * 2;
+      const spanMaxX = Math.max(w.sx, w.tx) + STUB * 2;
+      const inSpan = obstacles.filter(
+        (o) => o.id !== w.source && o.id !== w.target && o.x + o.width + CLEARANCE >= spanMinX && o.x - CLEARANCE <= spanMaxX,
+      );
+
+      if (horizontal(sSide) && horizontal(tSide) && inSpan.length > 0) {
+        const minTop = Math.min(...inSpan.map((o) => o.y));
+        const maxBottom = Math.max(...inSpan.map((o) => o.y + o.height));
+        const ys = new Set<number>();
+        for (let k = 0; k < 8; k++) {
+          ys.add(Math.round(minTop - CLEARANCE - k * LANE_PITCH));
+          ys.add(Math.round(maxBottom + CLEARANCE + k * LANE_PITCH));
+        }
+        for (const o of inSpan) {
+          for (let k = 0; k < 4; k++) {
+            ys.add(Math.round(o.y - CLEARANCE - k * LANE_PITCH));
+            ys.add(Math.round(o.y + o.height + CLEARANCE + k * LANE_PITCH));
+          }
+        }
+        const sortedY = [...inSpan].sort((a, b) => a.y - b.y);
+        for (let i = 0; i + 1 < sortedY.length; i++) {
+          const gapTop = sortedY[i].y + sortedY[i].height;
+          const gapBot = sortedY[i + 1].y;
+          if (gapBot - gapTop >= 2 * CLEARANCE) {
+            const mid = Math.round((gapTop + gapBot) / 2);
+            ys.add(mid);
+            if (mid - LANE_PITCH >= gapTop + CLEARANCE) ys.add(mid - LANE_PITCH);
+            if (mid + LANE_PITCH <= gapBot - CLEARANCE) ys.add(mid + LANE_PITCH);
+          }
+        }
+
+        const exitXs = Array.from({ length: 6 }, (_, k) => w.sx + DIR[sSide][0] * (STUB + k * LANE_PITCH));
+        const entryXs = Array.from({ length: 6 }, (_, k) => w.tx + DIR[tSide][0] * (STUB + k * LANE_PITCH));
+        for (const ex of exitXs) {
+          for (const nx of entryXs) {
+            for (const dy of ys) {
+              addCandidate([[w.sx, w.sy], [ex, w.sy], [ex, dy], [nx, dy], [nx, w.ty], [w.tx, w.ty]]);
+            }
+          }
+        }
+      } else if (!horizontal(sSide) || !horizontal(tSide)) {
+        const spanMinY = Math.min(w.sy, w.ty) - STUB * 2;
+        const spanMaxY = Math.max(w.sy, w.ty) + STUB * 2;
+        const inSpanY = obstacles.filter(
+          (o) => o.id !== w.source && o.id !== w.target && o.y + o.height + CLEARANCE >= spanMinY && o.y - CLEARANCE <= spanMaxY,
+        );
+        if (inSpanY.length > 0) {
+          const minLeft = Math.min(...inSpanY.map((o) => o.x));
+          const maxRight = Math.max(...inSpanY.map((o) => o.x + o.width));
+          const exitPt: Point = [w.sx + DIR[sSide][0] * STUB, w.sy + DIR[sSide][1] * STUB];
+          const entryPt: Point = [w.tx + DIR[tSide][0] * STUB, w.ty + DIR[tSide][1] * STUB];
+          for (let k = 0; k < 6; k++) {
+            const lx = Math.round(minLeft - CLEARANCE - k * LANE_PITCH);
+            const rx = Math.round(maxRight + CLEARANCE + k * LANE_PITCH);
+            addCandidate([[w.sx, w.sy], exitPt, [lx, exitPt[1]], [lx, entryPt[1]], entryPt, [w.tx, w.ty]]);
+            addCandidate([[w.sx, w.sy], exitPt, [rx, exitPt[1]], [rx, entryPt[1]], entryPt, [w.tx, w.ty]]);
+          }
+        }
+      }
+    }
+
+    let bestPoints = candidates[0];
+    let bestTuple: [number, number, number, number] | null = null;
+    for (const pts of candidates) {
+      const rawHits = blockingObstacles(pts, w.source, w.target, obstacles, 0).length;
+      const padHits = blockingObstacles(pts, w.source, w.target, obstacles, CLEARANCE).length;
+      const overlaps = countOverlaps(segmentsOf(pts, w.id, sKey, tKey), placedSegments);
+      const cost = manhattanLength(pts) + 18 * Math.max(0, pts.length - 2);
+      const tuple: [number, number, number, number] = [rawHits, padHits, overlaps, cost];
+      if (
+        !bestTuple ||
+        tuple[0] < bestTuple[0] ||
+        (tuple[0] === bestTuple[0] &&
+          (tuple[1] < bestTuple[1] ||
+            (tuple[1] === bestTuple[1] &&
+              (tuple[2] < bestTuple[2] || (tuple[2] === bestTuple[2] && tuple[3] < bestTuple[3])))))
+      ) {
+        bestTuple = tuple;
+        bestPoints = pts;
+      }
+    }
+
+    placedSegments.push(...segmentsOf(bestPoints, w.id, sKey, tKey));
+    const [labelX, labelY] = middleOf(bestPoints);
+    results.set(w.id, {
+      id: w.id,
+      kind: w.step ? "step" : "forward",
+      points: bestPoints,
+      path: roundedPolyline(bestPoints, 8),
+      labelX,
+      labelY,
     });
   }
 

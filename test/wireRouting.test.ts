@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { dragSegment, orthoPoints, routeWires, simplify, squareUp, type Point } from "../src/wireRouting.ts";
+import { dragSegment, orthoPoints, routeWires, scoreWireRoutes, simplify, squareUp, type Obstacle, type Point, type RouteInput } from "../src/wireRouting.ts";
 
 const square = (pts: Point[]) => pts.slice(1).every((q, i) => q[0] === pts[i][0] || q[1] === pts[i][1]);
 
@@ -38,4 +38,51 @@ test("every routed wire is square", () => {
     { id: "b", source: "C", target: "A", sx: 400, sy: 100, tx: 100, ty: 100 },
   ]);
   for (const r of routes.values()) assert.ok(square(r.points), `${r.id} is square`);
+});
+
+test("forward wires route around intermediate block obstacles with clearance", () => {
+  const obstacles: Obstacle[] = [
+    { id: "A", x: 0, y: 0, width: 100, height: 80 },
+    { id: "Mid", x: 200, y: 0, width: 140, height: 80 },
+    { id: "C", x: 440, y: 0, width: 100, height: 80 },
+  ];
+  const wires: RouteInput[] = [
+    { id: "w", source: "A", sourceHandle: "out", target: "C", targetHandle: "in", sx: 100, sy: 40, tx: 440, ty: 40 },
+  ];
+  const routes = routeWires(wires, obstacles);
+  const r = routes.get("w")!;
+  assert.ok(square(r.points));
+  const score = scoreWireRoutes(routes.values(), wires, obstacles);
+  assert.equal(score.insideBlocks, 0, "detour must stay outside Mid");
+  assert.equal(score.clearanceHits, 0, "detour must clear Mid by at least 8px");
+});
+
+test("parallel forward wires between columns get distinct non-overlapping lanes", () => {
+  const obstacles: Obstacle[] = [
+    { id: "A", x: 0, y: 0, width: 100, height: 100 },
+    { id: "Mid", x: 200, y: 0, width: 140, height: 100 },
+    { id: "B", x: 440, y: 0, width: 100, height: 100 },
+  ];
+  const wires: RouteInput[] = [
+    // Two wires from different ports on A detouring past Mid to B must not share a detour lane or stem
+    { id: "d1", source: "A", sourceHandle: "o1", target: "B", targetHandle: "i1", sx: 100, sy: 30, tx: 440, ty: 30 },
+    { id: "d2", source: "A", sourceHandle: "o2", target: "B", targetHandle: "i2", sx: 100, sy: 60, tx: 440, ty: 60 },
+    // Two wires in the same vertical corridor between columns must get distinct vertical channels
+    { id: "v1", source: "A", sourceHandle: "o3", target: "B", targetHandle: "i3", sx: 100, sy: 130, tx: 300, ty: 180 },
+    { id: "v2", source: "Mid", sourceHandle: "o1", target: "B", targetHandle: "i4", sx: 100, sy: 190, tx: 300, ty: 240 },
+  ];
+  const routes = routeWires(wires, obstacles);
+  const score = scoreWireRoutes(routes.values(), wires, obstacles);
+  assert.equal(score.insideBlocks, 0, "detouring wires must not cross blocks");
+  assert.equal(score.collinearOverlaps, 0, "parallel wires must not share collinear segments");
+});
+
+test("fan-out from one source port splits cleanly without losing #55 shape", () => {
+  const wires: RouteInput[] = [
+    { id: "w1", source: "A", sourceHandle: "out", target: "B", targetHandle: "in", sx: 100, sy: 100, tx: 300, ty: 50 },
+    { id: "w2", source: "A", sourceHandle: "out", target: "C", targetHandle: "in", sx: 100, sy: 100, tx: 300, ty: 150 },
+  ];
+  const routes = routeWires(wires, []);
+  assert.deepEqual(routes.get("w1")!.points, [[100, 100], [200, 100], [200, 50], [300, 50]]);
+  assert.deepEqual(routes.get("w2")!.points, [[100, 100], [200, 100], [200, 150], [300, 150]]);
 });

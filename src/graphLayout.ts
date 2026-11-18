@@ -1,7 +1,7 @@
 export type LayoutPoint = { x: number; y: number };
 export type LayoutNode = { id: string; width?: number; height?: number; pin?: "first" | "last" };
 export type LayoutEdge = { source: string; target: string; sourceOffset?: number; targetOffset?: number };
-export type LayoutOptions = { origin?: LayoutPoint; columnGap?: number; rowGap?: number };
+export type LayoutOptions = { origin?: LayoutPoint; columnGap?: number; rowGap?: number; reserveDummies?: boolean };
 
 const DEFAULT_WIDTH = 220;
 const DEFAULT_HEIGHT = 130;
@@ -211,13 +211,15 @@ export function layoutGraph(
     segIncoming.get(e.target)?.push(e);
   }
 
+  const reserveDummies = !!options.reserveDummies;
   const placeColumn = (index: number) => {
     let top = 0;
     for (const id of columns[index]) {
-      if (id.startsWith("__dummy:")) continue;
+      if (!reserveDummies && id.startsWith("__dummy:")) continue;
       y.set(id, top);
       top += Math.ceil(sizes.get(id)!.height + rowGap);
     }
+    if (reserveDummies) return;
     for (const id of columns[index]) {
       if (!id.startsWith("__dummy:")) continue;
       const inE = segIncoming.get(id);
@@ -312,7 +314,7 @@ export function layoutGraph(
   // Vertical coordinate alignment: downstream columns align to predecessors
   for (let round = 0; round < 4; round++) {
     for (let c = 1; c < columns.length; c++) {
-      const realInCol = columns[c].filter((id) => !id.startsWith("__dummy:"));
+      const realInCol = reserveDummies ? columns[c] : columns[c].filter((id) => !id.startsWith("__dummy:"));
       if (realInCol.length === 0) continue;
 
       const desiredY = new Map<string, number>();

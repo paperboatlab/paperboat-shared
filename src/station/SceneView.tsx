@@ -349,6 +349,7 @@ export function SceneView({
   view,
   grid,
   projection = "persp",
+  orientation = "cube",
   axes = false,
   cube: cubeMode = "normal",
   floorGrid: showFloorGrid = true,
@@ -363,6 +364,9 @@ export function SceneView({
   view: View;
   grid: boolean;
   projection?: "persp" | "iso";
+  /** Which 3D corner orientation widget to show (exclusive; default "cube"). */
+  orientation?: "cube" | "axes";
+  /** Additive triad override for 3D charts. */
   axes?: boolean;
   /** Compact mode shrinks & dims the CAD view cube until hovered (used by 3D plots). */
   cube?: "normal" | "compact";
@@ -526,11 +530,13 @@ export function SceneView({
       };
     }
 
-    // 3D only: the view cube in the corner and the orientation triad (hidden in 2D views).
-    const cube = view.mode === "3d"
+    // 3D only: the view cube or the orientation triad (hidden in 2D views).
+    const cube = view.mode === "3d" && orientation === "cube"
       ? viewCube(el, renderer, () => camera, controls, token, { compact: cubeMode === "compact" })
       : null;
-    const triad = view.mode === "3d" && axes ? viewAxes(el, renderer, () => camera, token) : null;
+    const triad = view.mode === "3d" && (orientation === "axes" || axes)
+      ? viewAxes(el, renderer, () => camera, token)
+      : null;
     renderer.autoClear = false;
 
     const pickDot = new THREE.Mesh(
@@ -632,7 +638,7 @@ export function SceneView({
       labelGroup.current = null;
       floorGrid.current = null;
     };
-  }, [themeVersion, background, showFloorGrid]); // eslint-disable-line react-hooks/exhaustive-deps -- view is read once per build
+  }, [themeVersion, background, showFloorGrid, orientation, axes, cubeMode]); // eslint-disable-line react-hooks/exhaustive-deps -- view is read once per build
 
   useEffect(() => {
     const w = world.current;
