@@ -76,6 +76,7 @@ export {
   type RouteInput,
   type Obstacle,
   type WireRoute,
+  type RouteScore,
   backWireLaneOffset,
   backWireExitDistance,
   roundedPolyline,
@@ -85,6 +86,7 @@ export {
   dragSegment,
   middleOf as middleOfWire,
   routeWires,
+  scoreWireRoutes,
 } from "./wireRouting.ts";
 export * from "./graphLayout.ts";
 export * from "./undo.ts";
@@ -92,5 +94,6 @@ export * from "./clipboard.ts";
 export * from "./icon.ts";
 export * from "./geometry.ts";
 export * from "./canvasHotkeys.ts";
+export * from "./valueTable.ts";
 // The plot palette and colormaps, pure data: usable without the plot components (tests, workers).
 export { MATLAB_COLORS, colormapCss, colormapStops, rgbHex, sampleColormap } from "./plot/colormaps.ts";

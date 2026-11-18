@@ -114,10 +114,10 @@ export function fits(v: Variable, def: ParamDef): boolean {
 
 const NUMBER_TOKEN = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
 
-/** Parse MATLAB-style matrix text ("1 2; 3 4", newlines, commas, brackets) and report its shape or error. */
-export function parseMatrix(text: string): { rows: number; cols: number } | { error: string } {
+/** Parse MATLAB-style matrix text ("1 2; 3 4", newlines, commas, brackets) into finite numeric rows. */
+export function parseMatrixCells(text: string): { rows: number; cols: number; cells: number[][] } | { error: string } {
   let s = text.trim();
-  if (!s || s === "[]") return { rows: 0, cols: 0 };
+  if (!s || s === "[]") return { rows: 0, cols: 0, cells: [] };
   if (s.startsWith("[")) {
     let depth = 0;
     for (let i = 0; i < s.length; i++) {
@@ -133,7 +133,7 @@ export function parseMatrix(text: string): { rows: number; cols: number } | { er
     }
     if (depth !== 0) return { error: 'unclosed "["' };
   }
-  if (!s) return { rows: 0, cols: 0 };
+  if (!s) return { rows: 0, cols: 0, cells: [] };
   const rowStrings: string[] = [];
   if (s.startsWith("[")) {
     let i = 0;
@@ -154,19 +154,28 @@ export function parseMatrix(text: string): { rows: number; cols: number } | { er
     if (s.includes("[") || s.includes("]")) return { error: 'unexpected "[" or "]"' };
     rowStrings.push(...s.split(/[;\r\n]+/));
   }
-  let rows = 0;
   let cols = 0;
+  const cells: number[][] = [];
   for (const raw of rowStrings) {
     const tokens = raw.replaceAll(",", " ").trim().split(/\s+/).filter(Boolean);
     if (tokens.length === 0) continue;
+    const row: number[] = [];
     for (const tok of tokens) {
-      if (!NUMBER_TOKEN.test(tok) || !Number.isFinite(Number(tok))) return { error: `"${tok}" is not a finite number` };
+      const n = Number(tok);
+      if (!NUMBER_TOKEN.test(tok) || !Number.isFinite(n)) return { error: `"${tok}" is not a finite number` };
+      row.push(n);
     }
-    if (rows === 0) cols = tokens.length;
-    else if (tokens.length !== cols) return { error: `row ${rows} has ${tokens.length} columns, expected ${cols}` };
-    rows++;
+    if (cells.length === 0) cols = row.length;
+    else if (row.length !== cols) return { error: `row ${cells.length} has ${row.length} columns, expected ${cols}` };
+    cells.push(row);
   }
-  return { rows, cols };
+  return { rows: cells.length, cols, cells };
+}
+
+/** Parse MATLAB-style matrix text ("1 2; 3 4", newlines, commas, brackets) and report its shape or error. */
+export function parseMatrix(text: string): { rows: number; cols: number } | { error: string } {
+  const parsed = parseMatrixCells(text);
+  return "error" in parsed ? parsed : { rows: parsed.rows, cols: parsed.cols };
 }
 
 const NAME = /^[A-Za-z_]\w*$/;

@@ -22,3 +22,4 @@ export * from "./Console.tsx";
 export * from "./messages.ts";
 export * from "./Messages.tsx";
 export * from "./SolverSettings.tsx";
+export * from "./ValueTable.tsx";
