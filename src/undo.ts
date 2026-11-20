@@ -17,7 +17,7 @@ function strip<N extends Node, E extends Edge>(nodes: N[], edges: E[]): Snapshot
  * Undo and redo for a canvas: Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y (⌘ on a Mac), except while
  * typing in a field, which keeps its own. A step is the canvas once it settles: adding or
  * removing blocks and wires, moving, editing params, grouping. Selecting is not a step.
- * `reset` changing (the backend loaded another graph) clears the history.
+ * `reset` changing (the station loaded another graph) clears the history.
  * Returns the same two steps for the Edit menu, and whether each has anything to do.
  */
 export function useUndo<N extends Node, E extends Edge>(

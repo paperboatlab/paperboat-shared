@@ -1,4 +1,4 @@
-import type { DashboardLayout, InstrumentSettings, ParamValue } from "./protocol.ts";
+import type { BoardLayout, InstrumentSettings, ParamValue } from "./protocol.ts";
 import { readStored, writeStored } from "./storage.ts";
 
 export type Size = "compact" | "normal" | "large" | "xlarge";
@@ -32,7 +32,7 @@ export type Monitor = {
   sources?: Record<string, { label: string; unit?: string }>;
 };
 
-type Deco = NonNullable<DashboardLayout["decorations"]>[number];
+type Deco = NonNullable<BoardLayout["decorations"]>[number];
 export type DecoKind = Deco["kind"];
 
 /** An instrument on the grid. `tab` is its tab's name, "" when the layout has no tabs. */
@@ -81,7 +81,7 @@ function decoCells(d: Deco, columns: number): [number, number] {
  * instruments keep their reading order (saved row, then column) and flow into the fewer
  * columns, and sections and separators are hidden.
  */
-export function arrange(monitors: Record<string, Monitor>, layout: DashboardLayout | undefined, columns: number): Arranged {
+export function arrange(monitors: Record<string, Monitor>, layout: BoardLayout | undefined, columns: number): Arranged {
   const tabs = [...new Set(layout?.tabs ?? [])];
   const tabOf = (t: string | undefined) => (tabs.length === 0 ? "" : t !== undefined && tabs.includes(t) ? t : tabs[0]);
   const narrowed = columns < (layout?.columns ?? DEFAULT_COLUMNS);
@@ -177,7 +177,7 @@ export function rowsOf(a: Arranged, tab: string): number {
 // ---- Saving: the layout that records an arrangement exactly, and the edits that make one ----
 
 /** The layout that records `a`; `first`, an instrument, is listed first so what it lands on makes way. */
-export function layoutOf(a: Arranged, first?: string): DashboardLayout {
+export function layoutOf(a: Arranged, first?: string): BoardLayout {
   const tabbed = a.tabs.length > 0;
   const instruments = a.instruments.map((p) => ({
     block: p.block,
@@ -208,7 +208,7 @@ export function layoutOf(a: Arranged, first?: string): DashboardLayout {
 }
 
 /** The layout with an instrument's own settings changed; `undefined` or none drops them. */
-export function setSettings(a: Arranged, block: string, settings: InstrumentSettings | undefined): DashboardLayout {
+export function setSettings(a: Arranged, block: string, settings: InstrumentSettings | undefined): BoardLayout {
   return edit(a, (m) => {
     const p = m.instruments.find((i) => i.block === block);
     if (!p) return;
@@ -218,7 +218,7 @@ export function setSettings(a: Arranged, block: string, settings: InstrumentSett
 }
 
 /** Copy `a`, change the copy, and give the layout that records it. */
-function edit(a: Arranged, change: (m: Arranged) => string | void): DashboardLayout {
+function edit(a: Arranged, change: (m: Arranged) => string | void): BoardLayout {
   const m = structuredClone(a);
   return layoutOf(m, change(m) || undefined);
 }
@@ -393,12 +393,12 @@ export function inlineInText(text: string, name: string, value: unknown): string
 }
 
 /** Labels and section titles in `layout` that refer to `{name}`, by their place in the layout's list. */
-export function textUsing(layout: DashboardLayout | undefined, name: string): { index: number; kind: DecoKind; text: string }[] {
+export function textUsing(layout: BoardLayout | undefined, name: string): { index: number; kind: DecoKind; text: string }[] {
   return (layout?.decorations ?? []).flatMap((d, index) => (d.text !== undefined && renameInText(d.text, name, `${name}_`) !== d.text ? [{ index, kind: d.kind, text: d.text }] : []));
 }
 
 /** `layout` with every decoration's text mapped by `f`; the same object when nothing changes. */
-export function mapTexts(layout: DashboardLayout, f: (text: string) => string): DashboardLayout {
+export function mapTexts(layout: BoardLayout, f: (text: string) => string): BoardLayout {
   let changed = false;
   const decorations = layout.decorations?.map((d) => {
     const text = d.text === undefined ? undefined : f(d.text);
@@ -409,9 +409,9 @@ export function mapTexts(layout: DashboardLayout, f: (text: string) => string): 
   return changed ? { ...layout, decorations } : layout;
 }
 
-/** A saved layout, if the browser has one for this backend. */
-export const loadSaved = (key: string): DashboardLayout | undefined =>
-  readStored(`paperboat.dashboard:${key}`, (v): v is DashboardLayout => !!v && Array.isArray((v as DashboardLayout).instruments));
+/** A saved layout, if the browser has one for this station. */
+export const loadSaved = (key: string): BoardLayout | undefined =>
+  readStored(`paperboat.board:${key}`, (v): v is BoardLayout => !!v && Array.isArray((v as BoardLayout).instruments));
 
-/** Keep the user's layout for this backend in the browser, as the working copy: a project file (#82) saves and restores it. `undefined` forgets it. */
-export const save = (key: string, layout: DashboardLayout | undefined) => writeStored(`paperboat.dashboard:${key}`, layout);
+/** Keep the user's layout for this station in the browser, as the working copy: a flow file (.psf) saves and restores it. `undefined` forgets it. */
+export const save = (key: string, layout: BoardLayout | undefined) => writeStored(`paperboat.board:${key}`, layout);

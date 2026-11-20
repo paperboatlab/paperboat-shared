@@ -46,7 +46,7 @@ export {
   mapTexts,
   loadSaved,
   save, save as saveLayout,
-} from "./dashboardLayout.ts";
+} from "./boardLayout.ts";
 export {
   wireMismatch,
   portLabel,

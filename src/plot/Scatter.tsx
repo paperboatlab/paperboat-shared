@@ -1,4 +1,4 @@
-// A shared scatter plot on the Scope's uPlot backend: x/y points, the same axes and grid, no
+// A shared scatter plot on the Scope's uPlot renderer: x/y points, the same axes and grid, no
 // line. It lives here so a Studio never draws its own chart canvas.
 import { useEffect, useRef } from "react";
 import uPlot from "uplot";

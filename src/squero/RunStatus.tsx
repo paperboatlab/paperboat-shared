@@ -34,7 +34,7 @@ export function RunStatus({ phase, since, fraction, onCancel }: {
       )}
       <span className="run-phase">{phase}…</span>
       <span className="run-time">{elapsed(Math.max(0, now - since))}</span>
-      {onCancel && <button type="button" className="key small run-cancel" onClick={onCancel} title="Stop the run (Ctrl+C in the console)">Cancel</button>}
+      {onCancel && <button type="button" className="key small run-cancel" onClick={onCancel} title="Stop the run (Ctrl+C in the CLI)">Cancel</button>}
     </span>
   );
 }

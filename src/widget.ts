@@ -3,7 +3,7 @@
 // imports the widget cannot drift apart.
 //
 // A widget is presentation only: no host, protocol or registry. The adapter that maps a
-// backend's data to its props stays in the toolkit (GUIDELINES §7).
+// station's data to its props stays in the toolkit (GUIDELINES §7).
 
 export type WidgetMeta = {
   /** Stable identity, the same string a toolkit uses as its instrument kind. */

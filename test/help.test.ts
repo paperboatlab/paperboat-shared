@@ -58,12 +58,12 @@ test("loadDocs reads sites.json, takes the sites asked for, skips the ones that 
     "https://x.test/sites.json": [
       { site: "paperboat", title: "Paperboat", kind: "engine", help: "paperboat/help.json" },
       { site: "toolkits/control", title: "control", kind: "toolkit", help: "toolkits/control/help.json" },
-      { site: "apps/squero-studio-om", title: "OM", kind: "program", help: "apps/squero-studio-om/help.json" },
+      { site: "apps/squero-studio-om", title: "OM", kind: "squero", help: "apps/squero-studio-om/help.json" },
     ],
     "https://x.test/paperboat/help.json": site,
   };
   const get = async (url: string) => ({ ok: url in files, status: 404, json: async () => files[url] });
-  const got = await loadDocs((s) => s.kind !== "program", "https://x.test/", get);
+  const got = await loadDocs((s) => s.kind !== "squero", "https://x.test/", get);
   assert.deepEqual(got.map((s) => s.site), ["paperboat"]);
 });
 

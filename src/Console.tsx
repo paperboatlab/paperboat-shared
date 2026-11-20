@@ -31,7 +31,7 @@ function CopyKey({ text, label = "copy", title, className = "log-copy" }: { text
 }
 
 /**
- * The Console: what the backend and app logged, newest last. Active from startup before the
+ * The Console: what the station and app logged, newest last. Active from startup before the
  * first run so non-run actions and errors are visible immediately. A line that names a block
  * has a button that shows the block on the Flow page; every line has a copy key on hover.
  */

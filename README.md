@@ -12,7 +12,7 @@ panel; it carries no simulation runtime or domain logic.
 | Tokens, Geist fonts, light/dark | `src/tokens.css`, `src/base.css`, `src/plates.css` |
 | Shell and menus | `src/Shell.tsx` (`AppBar`, `BarEnd`, `Rail`, `Panel`, `StatusPill`, `Switch`, `ThemeToggle`), `src/Menus.tsx`, `src/commands.ts`, `src/Modal.tsx`, `src/Logo.tsx` |
 | Blocks, ports and wires | `src/Compact.tsx`, `src/Icon.tsx`, `src/portLayout.tsx`, `src/ports.ts`, `src/wireSnap.tsx`, `src/wireRouting.ts`, `src/wireBends.tsx` |
-| Board and plots | `src/Dashboard.tsx`, `src/plot/` (`Plot2D`, `HeatFigure`, `Colorbar`, `TexText`, `Scope`, `Sparkline`) |
+| Board and plots | `src/Board.tsx`, `src/plot/` (`Plot2D`, `HeatFigure`, `Colorbar`, `TexText`, `Scope`, `Sparkline`) |
 | Code editor and files | `src/editor/` (`CodeEditor`, `themes.ts`, `useSqueroConfig`), `src/files/` (`FileTree`, `FileRail`) |
 | Package panel and Squero shell | `src/packages/` (`PackagePanel`, `PackageWindow`), `src/squero/` (`SqueroLogo`, `AboutSquero`) |
 | Protocol types | `src/protocol.ts` (generated from `paperboat/protocol/schema/paperboat-0.schema.json`) |
