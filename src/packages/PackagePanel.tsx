@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { GlideBrackets } from "../Shell.tsx";
 
 export type RuntimeChannel = { name: string; version: string; /** A newer version, if any. */ update?: string; current?: boolean };
-/** A key the app adds to a section's head or foot (Restart backend, Update index). */
+/** A key the app adds to a section's head or foot (Restart station, Update index). */
 export type PackageAction = { label: string; run: () => void; title?: string; disabled?: boolean };
 
 export type PackageRuntime = {
@@ -41,7 +41,7 @@ export type PackageEnvironment = {
   packages: InstalledPackage[];
   /** "No packages in this project yet." */
   empty?: string;
-  /** Keys in the foot (Update packages, Restart backend). */
+  /** Keys in the foot (Update packages, Restart station). */
   actions?: PackageAction[];
   remove?: (name: string) => void;
   /** Install `version` over the installed one (a package's `update`). */

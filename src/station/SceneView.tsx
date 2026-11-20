@@ -341,7 +341,7 @@ function applyEntity(obj: THREE.Object3D, e: Entity) {
 }
 
 /**
- * Renders the backend's scene entities. Knows shapes, not domains. The camera is fixed
+ * Renders the station's scene entities. Knows shapes, not domains. The camera is fixed
  * at mount from `view`, so the parent remounts this component when the view changes.
  */
 export function SceneView({
@@ -442,7 +442,7 @@ export function SceneView({
       } else {
         floorGrid.current = null;
       }
-      // The backend may say where the camera opens (and so where Home returns): view.camera.
+      // The station may say where the camera opens (and so where Home returns): view.camera.
       const cam = view.camera;
       const fov = cam?.fov ?? 50;
       const eyePos = cam?.eye ?? [2, 4, 8];
