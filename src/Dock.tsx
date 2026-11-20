@@ -49,7 +49,7 @@ export function Dock({
   );
 }
 
-export type BackendInfo = {
+export type StationInfo = {
   protocol?: string;
   blocksCount?: number;
   objectsCount?: number;
@@ -61,8 +61,8 @@ export type BackendInfo = {
   variablesCount?: number;
 };
 
-/** One row of `paperboat list --json` (the `/__paperboat/backends` endpoint). */
-type RunningBackend = {
+/** One row of `paperboat list --json` (the `/__paperboat/stations` endpoint). */
+type RunningStation = {
   kind?: string;
   name?: string;
   engine?: string;
@@ -72,10 +72,10 @@ type RunningBackend = {
 };
 
 /**
- * File > Backend…: which backend the app talks to. A packaged app has one and never needs this; it is for
+ * File > Station…: which station the app talks to. A packaged app has one and never needs this; it is for
  * tinkerers pointing the app at another (an address, such as ws://localhost:8765). Esc or Close leaves.
  */
-export function BackendWindow({
+export function StationWindow({
   url,
   connection,
   engine,
@@ -86,25 +86,25 @@ export function BackendWindow({
   url: string;
   connection: string;
   engine: string;
-  info?: BackendInfo;
+  info?: StationInfo;
   onConnect: (url: string) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(url);
-  const [running, setRunning] = useState<RunningBackend[]>([]);
+  const [running, setRunning] = useState<RunningStation[]>([]);
   const [looking, setLooking] = useState(true);
   const [listMissing, setListMissing] = useState(false);
   const root = useRef<HTMLElement>(null);
   useDismiss(root, onClose);
 
-  // The CLI serves `/__paperboat/backends` (Vite in a checkout, the static server in a
+  // The CLI serves `/__paperboat/stations` (Vite in a checkout, the static server in a
   // package). A host without it keeps the address field; it never blocks connecting by hand.
   const loadRunning = () => {
     setLooking(true);
-    fetch("/__paperboat/backends", { cache: "no-store" })
+    fetch("/__paperboat/stations", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((list: RunningBackend[]) => {
-        setRunning(list.filter((b) => b.kind === undefined || b.kind === "backend"));
+      .then((list: RunningStation[]) => {
+        setRunning(list.filter((b) => b.kind === undefined || b.kind === "station"));
         setListMissing(false);
       })
       .catch(() => {
@@ -121,32 +121,32 @@ export function BackendWindow({
   const presets = ["ws://localhost:8765", "ws://127.0.0.1:8765"];
 
   return (
-    <section className="console-window backend-window" role="dialog" aria-label="Backend" data-own-keys ref={root}>
+    <section className="console-window station-window" role="dialog" aria-label="Station" data-own-keys ref={root}>
       <header className="console-head">
-        <h2>Backend</h2>
+        <h2>Station</h2>
         <span className={`lbl conn-${connection}`}>{connection === "open" ? `connected: ${engine || "ready"}` : connection}</span>
         <button className="key small" title="Close (Esc)" onClick={onClose}>
           Close
         </button>
       </header>
       <form
-        className="backend-form"
+        className="station-form"
         onSubmit={(e) => {
           e.preventDefault();
           onConnect(draft.trim());
         }}
       >
-        <label className="lbl" htmlFor="backend-address">
+        <label className="lbl" htmlFor="station-address">
           Address
         </label>
         <span className="well field">
-          <input id="backend-address" autoFocus value={draft} spellCheck={false} onChange={(e) => setDraft(e.target.value)} size={28} />
+          <input id="station-address" autoFocus value={draft} spellCheck={false} onChange={(e) => setDraft(e.target.value)} size={28} />
         </span>
         <button className="key">Connect</button>
       </form>
-      <div className="backend-running">
-        <div className="backend-running-head">
-          <span className="lbl muted">Running backends</span>
+      <div className="station-running">
+        <div className="station-running-head">
+          <span className="lbl muted">Running stations</span>
           <button type="button" className="key small" onClick={loadRunning} disabled={looking}>
             {looking ? "Looking…" : "Refresh"}
           </button>
@@ -160,7 +160,7 @@ export function BackendWindow({
                 <li key={target}>
                   <button
                     type="button"
-                    className={`backend-pick${url === target ? " current" : ""}`}
+                    className={`station-pick${url === target ? " current" : ""}`}
                     aria-current={url === target ? "true" : undefined}
                     title={`Connect to ${name} on ${target}`}
                     onClick={() => {
@@ -177,11 +177,11 @@ export function BackendWindow({
           </ul>
         ) : (
           <span className="lbl muted">
-            {looking ? "Looking for running backends…" : listMissing ? "The CLI list is not available here; type an address below." : "No backends are running."}
+            {looking ? "Looking for running stations…" : listMissing ? "The CLI list is not available here; type an address below." : "No stations are running."}
           </span>
         )}
       </div>
-      <div className="backend-presets">
+      <div className="station-presets">
         <span className="lbl muted">Presets:</span>
         {presets.map((p) => (
           <button key={p} type="button" className="key small" onClick={() => setDraft(p)}>
@@ -190,28 +190,28 @@ export function BackendWindow({
         ))}
       </div>
       {connection === "open" ? (
-        <div className="backend-card">
-          <div className="backend-card-head">
+        <div className="station-card">
+          <div className="station-card-head">
             <span>{engine || "Paperboat Engine"}</span>
             <span className="lbl conn-open">connected</span>
           </div>
-          <div className="backend-grid">
-            <div className="backend-grid-item">
+          <div className="station-grid">
+            <div className="station-grid-item">
               <span className="lbl">Protocol</span>
               <span className="val">{info?.protocol ?? "paperboat/0"}</span>
             </div>
-            <div className="backend-grid-item">
+            <div className="station-grid-item">
               <span className="lbl">Blocks catalog</span>
               <span className="val">{info?.blocksCount !== undefined ? `${info.blocksCount} ${info.blocksCount === 1 ? "block" : "blocks"}` : "–"}</span>
             </div>
-            <div className="backend-grid-item">
+            <div className="station-grid-item">
               <span className="lbl">Station</span>
               <span className="val">
                 {info?.objectsCount !== undefined ? `${info.objectsCount} ${info.objectsCount === 1 ? "object" : "objects"}` : "–"}
                 {info?.stationView ? ` · ${info.stationView}` : ""}
               </span>
             </div>
-            <div className="backend-grid-item">
+            <div className="station-grid-item">
               <span className="lbl">Solver default</span>
               <span className="val">
                 {info?.solver ?? "–"}
@@ -219,7 +219,7 @@ export function BackendWindow({
               </span>
             </div>
             {info?.toolkits && info.toolkits.length > 0 && (
-              <div className="backend-grid-item" style={{ gridColumn: "1 / -1" }}>
+              <div className="station-grid-item" style={{ gridColumn: "1 / -1" }}>
                 <span className="lbl">Toolkits</span>
                 <span className="val">
                   {info.toolkits.map((t) => `${t.name}${t.installed ? "" : " (not installed)"}`).join(", ")}
@@ -227,7 +227,7 @@ export function BackendWindow({
               </div>
             )}
             {info?.variablesCount !== undefined && info.variablesCount > 0 && (
-              <div className="backend-grid-item">
+              <div className="station-grid-item">
                 <span className="lbl">Variables</span>
                 <span className="val">{info.variablesCount} defaults</span>
               </div>
@@ -235,11 +235,11 @@ export function BackendWindow({
           </div>
         </div>
       ) : (
-        <div className="backend-card muted">
-          <span>{connection === "connecting" ? `Connecting to backend at ${draft}…` : "Not connected. Enter address and click Connect."}</span>
+        <div className="station-card muted">
+          <span>{connection === "connecting" ? `Connecting to station at ${draft}…` : "Not connected. Enter address and click Connect."}</span>
         </div>
       )}
-      <p className="muted backend-note">The backend runs the domain: its blocks, its station and its physics. The app reconnects by itself when it restarts.</p>
+      <p className="muted station-note">The station runs the domain: its blocks, its scene objects and its physics. The app reconnects by itself when it restarts.</p>
     </section>
   );
 }

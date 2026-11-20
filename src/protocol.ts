@@ -188,7 +188,7 @@ export type FlowType = "signal" | "step" | "state" | "model";
 export type BlockDef = {
   type: string;
   label: string;
-  /** source pushes into the domain, probe reads it, function computes, monitor shows a value on the Dashboard. */
+  /** source pushes into the domain, probe reads it, function computes, monitor shows a value on the Board. */
   kind: "source" | "probe" | "function" | "monitor";
   inputs: PortDef[];
   outputs: PortDef[];
@@ -197,7 +197,7 @@ export type BlockDef = {
   group?: string;
   /** Spawned by a station object (same id): not in the palette, no params, removed with it. */
   linked?: boolean;
-  /** A monitor's instrument on the Dashboard: graph (default), display (the latest value) or image. */
+  /** A monitor's instrument on the Board: graph (default), display (the latest value) or image. */
   instrument?: string;
   /** How the UI draws the block: a hint, so a UI without it (or a block without it) draws the normal card. */
   view?: {
@@ -326,7 +326,7 @@ export type ToolkitStatus = {
   description?: string;
   /** Whether engine/toolkit/<name>/toolkit.toml is installed. */
   installed: boolean;
-  /** Whether the current backend requires this toolkit. */
+  /** Whether the current station requires this toolkit. */
   required?: boolean;
   /** Currently installed release tag or 'dev'/'unknown'. */
   version?: string;
@@ -346,7 +346,7 @@ export type GraphNode = {
   id: string;
   type: string;
   params?: Record<string, ParamValue>;
-  /** Its place on the Flow canvas; backends ignore it. */
+  /** Its place on the Flow canvas; stations ignore it. */
   pos?: [number, number];
   ports?: PortSides;
   rotation?: 0 | 90 | 180 | 270;
@@ -357,7 +357,7 @@ export type GraphNode = {
   comment_mode?: "out" | "through";
   /** User notes or documentation for this block. */
   comment?: string;
-  /** Shown unfolded on the canvas, as its card, instead of as a plate. Backends ignore it. */
+  /** Shown unfolded on the canvas, as its card, instead of as a plate. Stations ignore it. */
   unfolded?: boolean;
 };
 
@@ -366,15 +366,15 @@ export type GraphEdge = {
   from: [string, string];
   /** [node, port] */
   to: [string, string];
-  /** The wire's bends on the canvas, [x, y] each, from the source end to the target end; a wire without them is routed automatically. Saved in a project; backends ignore it. */
+  /** The wire's bends on the canvas, [x, y] each, from the source end to the target end; a wire without them is routed automatically. Saved in a flow file; stations ignore it. */
   points?: [number, number][];
 };
 
-/** How one instrument draws, kept in the Board layout (it changes during a run without a graph edit and saves with the project). The shape is the instrument's own, defined by the toolkit that provides it; the engine and the app only carry it. */
+/** How one instrument draws, kept in the Board layout (it changes during a run without a graph edit and saves with the flow file). The shape is the instrument's own, defined by the toolkit that provides it; the engine and the app only carry it. */
 export type InstrumentSettings = Record<string, unknown>;
 
-/** The Dashboard's grid: where each monitor block's instrument sits and how big it is, plus decorations (sections, separators, labels) and tabs. A backend ships one as its default (the descriptor's [dashboard]); an instrument not listed falls in where the automatic order puts it, and a block that does not exist is ignored. Decorations and tabs belong to the layout, not the flow: the Flow canvas still decides which instruments exist. */
-export type DashboardLayout = {
+/** The Board's grid: where each monitor block's instrument sits and how big it is, plus decorations (sections, separators, labels) and tabs. A station ships one as its default (the descriptor's [board]); an instrument not listed falls in where the automatic order puts it, and a block that does not exist is ignored. Decorations and tabs belong to the layout, not the flow: the Flow canvas still decides which instruments exist. */
+export type BoardLayout = {
   /** Grid columns; the UI fits fewer on a narrow screen. */
   columns?: number;
   instruments?: ({
@@ -388,7 +388,7 @@ export type DashboardLayout = {
     tab?: string;
     settings?: InstrumentSettings;
   })[];
-  /** Pages of the Dashboard, each with its own grid. A tab strip shows when there are two or more. Absent: one page. */
+  /** Pages of the Board, each with its own grid. A tab strip shows when there are two or more. Absent: one page. */
   tabs?: string[];
   /** Things that are not instruments. section: a titled frame round a group of cells (takes no cells; `at` and `span` [w, h]). hline / vline: a separator on a grid line, in the gap, along `span` columns (hline, from the top of `at`'s row) or rows (vline, down the left of `at`'s column); takes no cells. label: text that takes cells like an instrument (`span` [w, h], default [2, 1]); a section's title and a label's text may hold `{block}` or `{block:.2f}`, which show that monitor's latest value (`{{` and `}}` are braces). console: the Console's lines, in a frame that takes cells (`span` [w, h], default [4, 3]); it has no text. station: a read-only view of the Station (the 3D scene), in a frame that takes cells (`span` [w, h], default [4, 3]); it has no text and no editing. */
   decorations?: ({
@@ -406,7 +406,7 @@ export type DashboardLayout = {
   })[];
 };
 
-/** A group of blocks. subsystem: a block you open to see its insides, like a Simulink subsystem; its ports are its inport and outport blocks (In, Out) and the wires crossing its edge. story: a subsystem that runs as one step of a Step flow (ports in -> next): its blocks once per clock step for params.seconds (0: once), fresh each time if params.reset. visual: a frame that tidies the canvas only. Groups nest (parent); the graph's wires stay flat, block to block, so backends treat a subsystem or a frame as if it weren't there. */
+/** A group of blocks. subsystem: a block you open to see its insides, like a Simulink subsystem; its ports are its inport and outport blocks (In, Out) and the wires crossing its edge. story: a subsystem that runs as one step of a Step flow (ports in -> next): its blocks once per clock step for params.seconds (0: once), fresh each time if params.reset. visual: a frame that tidies the canvas only. Groups nest (parent); the graph's wires stay flat, block to block, so stations treat a subsystem or a frame as if it weren't there. */
 export type GraphGroup = {
   id: string;
   kind: "visual" | "subsystem" | "story";
@@ -416,7 +416,7 @@ export type GraphGroup = {
   /** The group it is in (a subsystem, story or frame); absent: the top level. */
   parent?: string;
   collapsed?: boolean;
-  /** Its top-left on the whole canvas; backends ignore it. */
+  /** Its top-left on the whole canvas; stations ignore it. */
   pos?: [number, number];
   params?: {
     /** How long the story runs when a path arrives (0: once). */
@@ -424,9 +424,9 @@ export type GraphGroup = {
     /** Its blocks start afresh each time a path arrives (a story in a loop starts over). */
     reset?: boolean;
   };
-  /** Where a subsystem's or story's ports sit on its block (ids are node::port, or in and next). Backends ignore it. */
+  /** Where a subsystem's or story's ports sit on its block (ids are node::port, or in and next). Stations ignore it. */
   ports?: PortSides;
-  /** Ports a subsystem or story shows as a block even where no wire crosses its edge yet, in order. Backends ignore it. */
+  /** Ports a subsystem or story shows as a block even where no wire crosses its edge yet, in order. Stations ignore it. */
   expose?: ({
     side: "in" | "out";
     /** [node, port] inside the group: an input for side in, an output for side out. */
@@ -438,7 +438,7 @@ export type GraphGroup = {
 
 export type Vec3 = [number, number, number];
 
-/** A param's value: a number, true / false (a boolean param), or text (text, key and file params). Or a reference (#36): {"var": name} takes a variable's value; {"expr": formula} (number and boolean params) a formula over variables. The backend resolves references before it makes blocks and objects. */
+/** A param's value: a number, true / false (a boolean param), or text (text, key and file params). Or a reference (#36): {"var": name} takes a variable's value; {"expr": formula} (number and boolean params) a formula over variables. The station resolves references before it makes blocks and objects. */
 export type ParamValue = number | boolean | string | {
   /** A variable's name. */
   var: string;
@@ -476,7 +476,7 @@ export type FrameField = {
   max?: number;
 };
 
-/** How the Station page shows the station: the built-in scene, a graph of station objects, or the backend's own page (web; page is its path on the backend's port). */
+/** How the Station page shows the station: the built-in scene, a graph of station objects, or the station's own page (web; page is its path on the station's port). */
 export type StationView = {
   view: "scene" | "graph" | "web";
   page?: string;
@@ -525,7 +525,7 @@ export type Form = {
   outputs: PortDef[];
 };
 
-/** How a run goes. The backend's defaults come in hello.run; graph.run may override any of them except mode. */
+/** How a run goes. The station's defaults come in hello.run; graph.run may override any of them except mode. */
 export type RunSettings = {
   /** clock: every step for duration (and every Step flow); once: a Signal flow evaluated a single time. */
   mode?: "clock" | "once";
@@ -539,7 +539,7 @@ export type RunSettings = {
   solver?: "rk4" | "rk45" | "rk2" | "euler" | "discrete" | "cvode" | "ida";
   /** The solvers this engine has (solve::names()), the default first. In hello.run only: the UI offers these and hides the rest. */
   solvers?: string[];
-  /** The run's solver options (#196); each left out keeps the backend's. */
+  /** The run's solver options (#196); each left out keeps the station's. */
   solver_options?: {
     /** Relative tolerance (rk45, cvode, ida). */
     rtol?: number;
@@ -560,7 +560,7 @@ export type RunSettings = {
 export type Variable = {
   /** Letters, digits and _; not t, pi, e or a function's name. */
   name: string;
-  /** matrix: a matrix by its rows ("1 2; 3 4"), either a project variable or a live Squero MX variable (source mx). */
+  /** matrix: a matrix by its rows ("1 2; 3 4"), either a flow file variable or a live Squero MX variable (source mx). */
   type: "number" | "boolean" | "enum" | "text" | "file" | "matrix";
   /** Of its type: a number, true / false, text (enum: one of options), or matrix rows ("1 2; 3 4"). A live matrix too large to share has none and says why in note. */
   value?: number | boolean | string;
@@ -568,7 +568,7 @@ export type Variable = {
   expr?: string;
   /** A number's unit (m, N, rad…). */
   unit?: string;
-  /** UI only: a live variable broadcast by Squero Studio MX, not saved in the project. */
+  /** UI only: a live variable broadcast by Squero Studio MX, not saved in the flow file. */
   source?: "mx";
   min?: number;
   max?: number;
@@ -582,7 +582,7 @@ export type Variable = {
   note?: string;
   /** Where it's listed (Cart-pole, Controller…). */
   group?: string;
-  /** Also a control on the Dashboard (a Controls tile), for operators. */
+  /** Also a control on the Board (a Controls tile), for operators. */
   exposed?: boolean;
   /** Also a control in the run dock. */
   dock?: boolean;
@@ -590,10 +590,10 @@ export type Variable = {
   tunable?: boolean;
 };
 
-/** The variables of a backend (its defaults) or the user's. */
+/** The variables of a station (its defaults) or the user's. */
 export type Variables = Variable[];
 
-/** Where a block's ports sit on the Flow canvas: the port ids on each side, in order. A port not listed keeps its place (inputs on the left, outputs on the right, after the listed ones). Backends ignore it. */
+/** Where a block's ports sit on the Flow canvas: the port ids on each side, in order. A port not listed keeps its place (inputs on the left, outputs on the right, after the listed ones). Stations ignore it. */
 export type PortSides = {
   left?: string[];
   right?: string[];
@@ -601,28 +601,28 @@ export type PortSides = {
   bottom?: string[];
 };
 
-/** A project file (#82): everything a user made, as one JSON file (name.ppj). It is not a protocol message; the UI writes and reads it. flow, station, variables and dashboard are the shapes the protocol already uses. A block whose type the opening backend lacks stays as a lost block, params and wires kept. */
-export type Project = {
-  /** The project format version. Opening refuses a newer one and says so. */
+/** A station flow file (#82): everything a user made, as one JSON file (name.psf). It is not a protocol message; the UI writes and reads it. flow, station, variables and board are the shapes the protocol already uses. A block whose type the opening station lacks stays as a lost block, params and wires kept. */
+export type StationFlow = {
+  /** The flow file format version. Opening refuses a newer one and says so. */
   paperboat: 0;
-  /** The engine the project was made on (hello.engine). Opening it on another backend warns first. */
-  backend: string;
+  /** The engine the flow file was made on (hello.engine). Opening it on another station warns first. */
+  station: string;
   /** The Flow canvas, groups included; every node has its place (pos). */
   flow: Graph;
-  station?: Station;
+  station_objects?: Station;
   /** The user's variables: the list the Variables sheet shows. */
   variables?: Variables;
-  /** The user's Dashboard arrangement, if they made one. */
-  dashboard?: DashboardLayout;
-  /** Only the run settings the user changed from the backend's defaults. */
+  /** The user's Board arrangement, if they made one. */
+  board?: BoardLayout;
+  /** Only the run settings the user changed from the station's defaults. */
   run?: RunSettings;
-  /** Optional UI preferences and restrictions saved with the project (#104). */
+  /** Optional UI preferences and restrictions saved with the flow file (#104). */
   ui?: {
     /** Lock down parts of the UI behind an optional passcode (#104). */
     lock?: {
       /** When true, lock the Board's Arrange button and command. */
       arrange?: boolean;
-      /** Allowed page ids ('station', 'flow', 'dashboard'). */
+      /** Allowed page ids ('station', 'flow', 'board'). */
       pages?: string[];
       /** Allowed view mode ids ('navigator', 'commander', 'lookout'). */
       modes?: string[];
@@ -674,21 +674,21 @@ export type AnalysisDef = {
 /** Draw this primitive only while the block's latest value is on (a number above 0.5, or true), or only while it is not (off, and before any value). Absent: always. */
 export type When = "on" | "off";
 
-/** Every message a backend sends. */
+/** Every message a station sends. */
 export type ServerMsg =
   | {
     type: "hello";
     protocol: "paperboat/0";
     engine: string;
-    /** The Paperboat build that serves this backend (PAPERBOAT_VERSION). Absent: an older backend. */
+    /** The Paperboat build that serves this station (PAPERBOAT_VERSION). Absent: an older station. */
     version?: string;
     station?: StationView;
     run?: RunSettings;
     /** Available optional toolkits and their installed status on this machine. */
     toolkits?: ToolkitStatus[];
-    /** The binary frame layout this backend sends to this connection (1), present only when the client asked with ?binary=1 in its WebSocket URL: typed arrays come as binary frames and BinaryRef references. Absent: every array is JSON numbers. */
+    /** The binary frame layout this station sends to this connection (1), present only when the client asked with ?binary=1 in its WebSocket URL: typed arrays come as binary frames and BinaryRef references. Absent: every array is JSON numbers. */
     binary?: number;
-    /** The flow types this backend offers (#9): what a sheet may be. Absent (an older backend): a Signal flow, and a Step flow if a block has step ports. */
+    /** The flow types this station offers (#9): what a sheet may be. Absent (an older station): a Signal flow, and a Step flow if a block has step ports. */
     flows?: FlowType[];
   }
   | {
@@ -696,7 +696,7 @@ export type ServerMsg =
     blocks: BlockDef[];
     objects?: ObjectDef[];
     connectors?: Connectors;
-    dashboard?: DashboardLayout;
+    board?: BoardLayout;
     /** What the imported toolkits can analyse outside the flows (pb#370): offered on a subsystem or a selection. */
     analyses?: AnalysisDef[];
   }
@@ -722,15 +722,15 @@ export type ServerMsg =
     variables: Variables;
   }
   | {
-    /** Live variables from another client (Squero MX), shared across the backend's sessions. */
+    /** Live variables from another client (Squero MX), shared across the station's sessions. */
     type: "variables.remote";
     source: "mx";
     variables: Variables;
   }
   | {
-    type: "project.load";
+    type: "psf.load";
     name?: string;
-    project: Project;
+    psf: StationFlow;
   }
   | {
     type: "variables.values";
@@ -762,7 +762,7 @@ export type ServerMsg =
     type: "run.speed";
     /** Times real time (1: as the clock goes; 0: as fast as it can), as RunSettings.speed. */
     speed: number;
-    /** The run that took it (backend → UI only). */
+    /** The run that took it (station → UI only). */
     run?: string;
   }
   | {
@@ -858,7 +858,7 @@ export type ClientMsg =
   | {
     type: "variables.set";
     variables: Variables;
-    /** Another client's live variables (Squero MX): share them, do not make them this session's project. */
+    /** Another client's live variables (Squero MX): share them, do not make them this session's flow file. */
     source?: "mx";
   }
   | {
@@ -868,7 +868,7 @@ export type ClientMsg =
     type: "run.speed";
     /** Times real time (1: as the clock goes; 0: as fast as it can), as RunSettings.speed. */
     speed: number;
-    /** The run that took it (backend → UI only). */
+    /** The run that took it (station → UI only). */
     run?: string;
   }
   | {
@@ -877,7 +877,7 @@ export type ClientMsg =
     down: boolean;
   }
   | {
-    type: "backend.restart";
+    type: "station.restart";
   }
   | {
     type: "toolkit.install";

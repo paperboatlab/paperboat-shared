@@ -1,7 +1,7 @@
 {
   "name": "@paperboat/shared",
   "version": "0.1.5",
-  "description": "Paperboat's shared UI kit: tokens, Geist fonts, controls, blocks and ports, view.icon renderer, dashboard, shell, canvas utilities. No domain logic.",
+  "description": "Paperboat's shared UI kit: tokens, Geist fonts, controls, blocks and ports, view.icon renderer, board, shell, canvas utilities. No domain logic.",
   "license": "GPL-3.0-only",
   "private": true,
   "type": "module",
@@ -82,9 +82,9 @@
       "types": "./src/station/index.ts",
       "default": "./src/station/index.ts"
     },
-    "./dashboard": {
-      "types": "./src/Dashboard.tsx",
-      "default": "./src/Dashboard.tsx"
+    "./board": {
+      "types": "./src/Board.tsx",
+      "default": "./src/Board.tsx"
     },
     "./files": {
       "types": "./src/files/index.ts",

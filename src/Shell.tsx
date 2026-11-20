@@ -10,9 +10,9 @@ import type { Command, MenuId } from "./commands.ts";
  * - Commander: Station and Flow side by side, the Board a drawer under them.
  * - Lookout: the Board, for whoever runs and watches the rig; Station and Flow are drawers at
  *   its left and right, closed until wanted.
- * The Board is the `dashboard` page in code. The Console is not a page: it floats over them.
+ * The Board is the `board` page. The Console is not a page: it floats over them.
  */
-export type Page = "station" | "flow" | "dashboard";
+export type Page = "station" | "flow" | "board";
 export type Mode = "navigator" | "commander" | "lookout";
 export const MODES: Mode[] = ["navigator", "commander", "lookout"];
 export type Theme = "auto" | "light" | "dark";
@@ -22,7 +22,7 @@ export type PageInfo = { id: Page; label: string; hint: string };
 export const PAGES: PageInfo[] = [
   { id: "station", label: "Station", hint: "The setup: what's being worked on" },
   { id: "flow", label: "Flow", hint: "The blocks and wires" },
-  { id: "dashboard", label: "Board", hint: "Instruments during a run" },
+  { id: "board", label: "Board", hint: "Instruments during a run" },
 ];
 
 const index = (p: Page) => PAGES.findIndex((x) => x.id === p);
@@ -199,7 +199,7 @@ export function ProjectLabel({ name, dirty = false, onRename, what = "project" }
       const shift = Math.min(b.left + b.width / 2 - r.width / 2 - r.left, end.getBoundingClientRect().left - gap - r.right);
       if (shift >= 1) el.style.marginLeft = `${Math.floor(shift)}px`;
     };
-    // Whatever changes the room: the window, the name, a key's label (errors, the backend's name, a lock).
+    // Whatever changes the room: the window, the name, a key's label (errors, the station's name, a lock).
     const ro = new ResizeObserver(place);
     const watch = () => {
       ro.disconnect();

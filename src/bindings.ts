@@ -1,4 +1,4 @@
-// Variables (#36) in the UI, the model: what refers to what, renaming, merging the backend's defaults
+// Variables (#36) in the UI, the model: what refers to what, renaming, merging the station's defaults
 // with the user's own, and the TOML a developer pastes into a descriptor. The engine
 // resolves and checks them (variables.values); nothing here evaluates a formula.
 
@@ -38,7 +38,7 @@ export function inlineRef(value: ParamValue, name: string, v: number | boolean |
 }
 
 /** A place that uses a variable: a block's param on the Flow, a station object's property, or another variable's formula. */
-export type Use = { page: "flow" | "station" | "variables" | "dashboard"; id: string; field: string; formula?: string };
+export type Use = { page: "flow" | "station" | "variables" | "board"; id: string; field: string; formula?: string };
 
 /** Where each variable is used: blocks' params, station props and other variables' formulas. */
 export function usesOf(
@@ -201,8 +201,8 @@ export function freeName(base: string, list: Variables): string {
 }
 
 /**
- * The variables in use: the user's own (their order), then the backend's defaults they
- * don't mention. A default the user never touched is the backend's, so a newer backend's
+ * The variables in use: the user's own (their order), then the station's defaults they
+ * don't mention. A default the user never touched is the station's, so a newer station's
  * new default shows up; deleting a default brings it back (Reset).
  */
 export function merged(defaults: Variables, mine: Variables | undefined): Variables {
@@ -218,7 +218,7 @@ export function emptyOf(type: Variable["type"], options?: string[]): Variable["v
 
 const tomlString = (s: string) => JSON.stringify(s);
 
-/** The list as a descriptor's [[variables]] tables, to paste and make them a backend's defaults. */
+/** The list as a descriptor's [[variables]] tables, to paste and make them a station's defaults. */
 export function toToml(list: Variables): string {
   return list
     .map((v) => {

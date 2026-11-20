@@ -1,4 +1,4 @@
-// The Scope: Paperboat's study instrument, shared so the Dashboard and Squero Studio show the
+// The Scope: Paperboat's study instrument, shared so the Board and Squero Studio show the
 // same one (time / xy / fft, trigger, cursors, zoom, freeze, draw styles, CSV and PNG export).
 export { Scope } from "./Scope.tsx";
 export { scopeWidget } from "./widget.ts";

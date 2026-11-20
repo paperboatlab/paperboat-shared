@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { arrange, layoutOf, setSettings } from "../src/dashboardLayout.ts";
+import { arrange, layoutOf, setSettings } from "../src/boardLayout.ts";
 
 test("an instrument's settings live in the layout and survive arrange → layoutOf", () => {
   const monitors = { sc: { kind: "x", size: "large" as const, x: 0, y: 0 }, g: { kind: "y", x: 0, y: 100 } };

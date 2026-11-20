@@ -16,7 +16,7 @@ export const MENUS: { id: MenuId; label: string }[] = [
 ];
 
 /** A heading above a group of items, where the group needs one to read. */
-export const GROUP_TITLES: Record<string, string> = { pages: "Pages", mode: "Mode", theme: "Theme", recent: "Recent projects", solver: "Solver" };
+export const GROUP_TITLES: Record<string, string> = { pages: "Pages", mode: "Mode", theme: "Theme", recent: "Recent flows", solver: "Solver" };
 
 /** A key combination. `ctrl` also means ⌘ on a Mac. `key` is `KeyboardEvent.key`, lower-case. */
 export type Chord = { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean };
@@ -110,7 +110,7 @@ export function ownKeys(target: EventTarget | null): boolean {
 
 /**
  * The registry's own shortcuts: every command with a `chord` that is enabled. They work even
- * while typing in a field (a chord with Ctrl or Alt isn't text) and are then not a key for the backend.
+ * while typing in a field (a chord with Ctrl or Alt isn't text) and are then not a key for the station.
  */
 export function useShortcuts(commands: Command[]) {
   const latest = useRef(commands);
@@ -120,7 +120,7 @@ export function useShortcuts(commands: Command[]) {
       if (e.repeat) return;
       const hit = latest.current.find((c) => c.chord && chordMatches(c.chord, e));
       if (!hit) return;
-      e.preventDefault(); // not a key for the backend, and not the browser's (Ctrl+K)
+      e.preventDefault(); // not a key for the station, and not the browser's (Ctrl+K)
       if (isEnabled(hit)) hit.run();
     };
     window.addEventListener("keydown", onKey);

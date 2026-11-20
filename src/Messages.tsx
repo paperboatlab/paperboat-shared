@@ -1,5 +1,5 @@
 // Error, warning and info cards, shared by every app that talks to a compiler: omc in Studio,
-// and whatever backend a host app's console reports on. The card says its level in words, keeps
+// and whatever station a host app's console reports on. The card says its level in words, keeps
 // the prose in sans and the source location in mono, and shows selection by line, never a fill.
 
 import { useState } from "react";

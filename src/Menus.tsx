@@ -5,7 +5,7 @@ import { useDismiss, useFocusReturn } from "./dismiss.tsx";
 /**
  * The menu bar (#78): one menu per `MenuId` that has commands. An ARIA menubar: Tab enters it once,
  * ←/→ move between menus, ↓ or Enter opens one, ↑/↓ move in it, Esc closes. Disabled items stay and say
- * why in their tooltip. Keys here are the menu's own, never forwarded to the backend (`data-own-keys`).
+ * why in their tooltip. Keys here are the menu's own, never forwarded to the station (`data-own-keys`).
  */
 export function MenuBar({ commands, menuLabels }: { commands: Command[]; menuLabels?: Partial<Record<MenuId, string>> }) {
   const menus = byMenu(commands);
